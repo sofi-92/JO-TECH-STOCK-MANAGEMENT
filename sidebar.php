@@ -10,6 +10,7 @@ function getNavItems($role)
     switch ($role) {
         case 'admin':
         case 'manager':
+        case 'guest':
             return [
                 ['name' => 'Dashboard', 'path' => 'admin/index.php', 'icon' => 'home'],
                 ['name' => 'User Management', 'path' => 'admin/users.php', 'icon' => 'users'],

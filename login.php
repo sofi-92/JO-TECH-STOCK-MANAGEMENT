@@ -1,3 +1,8 @@
+<?php
+session_start();
+require 'config.php';
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -121,7 +126,7 @@ transform: matrix(1, 0, 0.01, 1, 0, 0);
     <div class="login-container">
         <img src="images/Qoricha logo.png" alt="JO TECH Logo" class="logo"> <!-- Logo -->
         <h2>Welcome Back!</h2>
-        <form action="/authenticate" method="post">
+        <form action="authenticate.php" method="post" class="login-form">
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required>

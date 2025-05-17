@@ -1,261 +1,602 @@
-<?php
-// sales_dashboard.php
-
-// Mock data for products
-$products = [
-    [
-        'id' => 1,
-        'name' => 'HP Printer Ink (Black)',
-        'category' => 'Accessories',
-        'stock' => 5,
-        'price' => '$45.99'
-    ],
-    [
-        'id' => 2,
-        'name' => 'A4 Paper Reams',
-        'category' => 'Stationery',
-        'stock' => 12,
-        'price' => '$4.99'
-    ],
-    [
-        'id' => 3,
-        'name' => 'Dell Latitude Laptop',
-        'category' => 'Computers',
-        'stock' => 8,
-        'price' => '$1,299.99'
-    ],
-    [
-        'id' => 4,
-        'name' => 'Wireless Mouse',
-        'category' => 'Accessories',
-        'stock' => 23,
-        'price' => '$24.99'
-    ],
-    [
-        'id' => 5,
-        'name' => 'USB-C Cables',
-        'category' => 'Accessories',
-        'stock' => 42,
-        'price' => '$12.99'
-    ],
-    [
-        'id' => 6,
-        'name' => 'Stapler',
-        'category' => 'Stationery',
-        'stock' => 18,
-        'price' => '$8.99'
-    ],
-    [
-        'id' => 7,
-        'name' => 'Ballpoint Pens (Blue)',
-        'category' => 'Stationery',
-        'stock' => 145,
-        'price' => '$0.99'
-    ],
-    [
-        'id' => 8,
-        'name' => 'Wireless Keyboard',
-        'category' => 'Accessories',
-        'stock' => 15,
-        'price' => '$49.99'
-    ]
-];
-
-// Mock data for categories
-$categories = ['All Categories', 'Stationery', 'Computers', 'Accessories'];
-
-// Include header (similar to DashboardLayout in React)
-include 'header.php';
-?>
-
-<div class="grid grid-cols-1 gap-6 mb-6">
-    <div class="bg-white p-4 shadow-sm rounded-lg">
-        <h2 class="text-lg font-semibold mb-4">
-            Welcome to the Sales Dashboard
-        </h2>
-        <p class="text-gray-600">
-            As a sales team member, you can view current stock levels to inform
-            customers about product availability.
-        </p>
-    </div>
-</div>
-
-<div class="bg-white p-6 rounded-lg shadow-sm mb-6">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <h2 class="text-lg font-semibold mb-4 md:mb-0">
-            Product Inventory
-        </h2>
-        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </div>
-                <input type="text" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search products...">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JO TECH - Admin Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #0a888f;
+            --primary-dark: rgb(4, 70, 73);
+            --secondary-color: #f8f9fa;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --success-color: #28a745;
+            --text-color: #333;
+            --light-gray: #e9ecef;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: var(--text-color);
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            background-color: #1e1b4e; 
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            padding: 20px 0;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 0 20px;
+            color:#ffffff; /*change latter*/
+        }
+        
+        .logo img {
+            max-width: 150px;
+        }
+        
+        .nav-menu {
+            list-style: none;
+        }
+        
+        .nav-item {
+            margin-bottom: 5px;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #ffffff;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: #3a3f5f;
+            color: white;
+        }
+        
+        .nav-link i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        
+        /* Main Content Styles */
+        .main-content {
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        /* Dashboard Cards */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .card-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .card-footer {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .card-icon.primary {
+            background-color: var(--primary-color);
+        }
+        
+        .card-icon.success {
+            background-color: var(--success-color);
+        }
+        
+        .card-icon.warning {
+            background-color: var(--warning-color);
+        }
+        
+        .card-icon.danger {
+            background-color: var(--danger-color);
+        }
+        
+        /* Alerts Section */
+        .alerts-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .alert-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .alert-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .alert-item:last-child {
+            border-bottom: none;
+        }
+        
+        .alert-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+        }
+        
+        .alert-icon.warning {
+            background-color: var(--warning-color);
+        }
+        
+        .alert-icon.danger {
+            background-color: var(--danger-color);
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-product {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .alert-message {
+            font-size: 13px;
+            color: #6c757d;
+        }
+        
+        .alert-time {
+            font-size: 12px;
+            color: #adb5bd;
+        }
+        
+        /* Recent Activity */
+        .recent-activity {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        
+        .activity-card, .quick-actions-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .activity-item {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            background-color: var(--light-gray);
+            color: var(--primary-color);
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-user {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .activity-description {
+            font-size: 13px;
+            color: #6c757d;
+        }
+        
+        .activity-time {
+            font-size: 12px;
+            color: #adb5bd;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .action-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .action-btn i {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .action-label {
+            font-size: 12px;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 1200px) {
+            .dashboard-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .recent-activity {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="images/Qoricha logo.png" alt="JO TECH Logo">
             </div>
-            <div class="relative inline-block text-left">
-                <select class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                    <?php foreach ($categories as $index => $category): ?>
-                        <option value="<?php echo $category === 'All Categories' ? '' : htmlspecialchars($category); ?>">
-                            <?php echo htmlspecialchars($category); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-        </div>
-    </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-boxes"></i>
+                        Inventory
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-shopping-cart"></i>
+                        Sales
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        Reports
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-users-cog"></i>
+                        User Management
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-tags"></i>
+                        Categories
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-truck"></i>
+                        Suppliers
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </a>
+                </li>
+            </ul>
+        </aside>
     
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product Name
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Stock Level
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                <?php foreach ($products as $product): ?>
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            <?php echo htmlspecialchars($product['name']); ?>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <?php echo htmlspecialchars($product['category']); ?>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <?php echo htmlspecialchars($product['stock']); ?>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <?php echo htmlspecialchars($product['price']); ?>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                <?php 
-                                    echo $product['stock'] > 10 ? 'bg-green-100 text-green-800' : 
-                                         ($product['stock'] > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'); 
-                                ?>">
-                                <?php 
-                                    echo $product['stock'] > 10 ? 'In Stock' : 
-                                         ($product['stock'] > 0 ? 'Low Stock' : 'Out of Stock'); 
-                                ?>
-                            </span>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    
-    <div class="flex items-center justify-between mt-6">
-        <div class="text-sm text-gray-500">
-            Showing <span class="font-medium">1</span> to
-            <span class="font-medium">8</span> of
-            <span class="font-medium">24</span> results
-        </div>
-        <div class="flex space-x-2">
-            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                Previous
-            </button>
-            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                Next
-            </button>
-        </div>
-    </div>
-</div>
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="header">
+                <h1>Admin Dashboard</h1>
+                <div class="user-info">
+                    <img src="images/user-avatar.png" alt="User Avatar">
+                    <span>Admin User</span>
+                </div>
+            </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <div class="bg-white p-6 rounded-lg shadow-sm">
-        <h3 class="font-semibold text-gray-800 mb-4">
-            Popular Categories
-        </h3>
-        <div class="space-y-4">
-            <div class="flex items-center justify-between">
-                <span class="text-gray-600">Stationery</span>
-                <div class="w-2/3 bg-gray-200 rounded-full h-2">
-                    <div class="bg-blue-500 h-2 rounded-full" style="width: 75%"></div>
+            <!-- Dashboard Summary Cards -->
+            <div class="dashboard-cards">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Total Products</div>
+                        <div class="card-icon primary">
+                            <i class="fas fa-box-open"></i>
+                        </div>
+                    </div>
+                    <div class="card-value">1,248</div>
+                    <div class="card-footer">+12% from last month</div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Total Sales</div>
+                        <div class="card-icon success">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                    </div>
+                    <div class="card-value">542</div>
+                    <div class="card-footer">Today's transactions</div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Low Stock Items</div>
+                        <div class="card-icon warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                    <div class="card-value">18</div>
+                    <div class="card-footer">Need immediate attention</div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Total Users</div>
+                        <div class="card-icon danger">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="card-value">24</div>
+                    <div class="card-footer">Active system users</div>
                 </div>
             </div>
-            <div class="flex items-center justify-between">
-                <span class="text-gray-600">Computers</span>
-                <div class="w-2/3 bg-gray-200 rounded-full h-2">
-                    <div class="bg-blue-500 h-2 rounded-full" style="width: 45%"></div>
-                </div>
-            </div>
-            <div class="flex items-center justify-between">
-                <span class="text-gray-600">Accessories</span>
-                <div class="w-2/3 bg-gray-200 rounded-full h-2">
-                    <div class="bg-blue-500 h-2 rounded-full" style="width: 60%"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="bg-white p-6 rounded-lg shadow-sm">
-        <h3 class="font-semibold text-gray-800 mb-4">
-            Stock Availability
-        </h3>
-        <div class="flex items-center justify-around">
-            <div class="text-center">
-                <div class="inline-flex items-center justify-center p-4 bg-green-100 rounded-full">
-                    <span class="text-xl font-bold text-green-800">75%</span>
-                </div>
-                <p class="mt-2 text-sm text-gray-500">In Stock</p>
-            </div>
-            <div class="text-center">
-                <div class="inline-flex items-center justify-center p-4 bg-yellow-100 rounded-full">
-                    <span class="text-xl font-bold text-yellow-800">20%</span>
-                </div>
-                <p class="mt-2 text-sm text-gray-500">Low Stock</p>
-            </div>
-            <div class="text-center">
-                <div class="inline-flex items-center justify-center p-4 bg-red-100 rounded-full">
-                    <span class="text-xl font-bold text-red-800">5%</span>
-                </div>
-                <p class="mt-2 text-sm text-gray-500">Out of Stock</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="bg-white p-6 rounded-lg shadow-sm">
-        <h3 class="font-semibold text-gray-800 mb-4">Quick Actions</h3>
-        <div class="space-y-4">
-            <button class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <span>Check product availability</span>
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-            </button>
-            <button class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <span>Filter by category</span>
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                </svg>
-            </button>
-            <button class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <span>Contact warehouse</span>
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                </svg>
-            </button>
-        </div>
-    </div>
-</div>
 
-<?php
-// Include footer
-include 'footer.php';
-?>
+            <!-- Stock Alerts Section -->
+            <div class="alerts-section">
+                <h2 class="section-title">
+                    <i class="fas fa-bell"></i>
+                    Stock Alerts
+                </h2>
+                <div class="alert-card">
+                    <div class="alert-item">
+                        <div class="alert-icon warning">
+                            <i class="fas fa-exclamation"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-product">A4 Paper (80gsm)</div>
+                            <div class="alert-message">Stock level below minimum threshold (5 remaining)</div>
+                        </div>
+                        <div class="alert-time">2 hours ago</div>
+                    </div>
+                    
+                    <div class="alert-item">
+                        <div class="alert-icon danger">
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-product">HP 202A Toner Cartridge</div>
+                            <div class="alert-message">Out of stock (0 remaining)</div>
+                        </div>
+                        <div class="alert-time">5 hours ago</div>
+                    </div>
+                    
+                    <div class="alert-item">
+                        <div class="alert-icon warning">
+                            <i class="fas fa-exclamation"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-product">Stapler Heavy Duty</div>
+                            <div class="alert-message">Stock level below minimum threshold (3 remaining)</div>
+                        </div>
+                        <div class="alert-time">1 day ago</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity and Quick Actions -->
+            <div class="recent-activity">
+                <div class="activity-card">
+                    <h2 class="section-title">
+                        <i class="fas fa-history"></i>
+                        Recent Activity
+                    </h2>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-user">Admin User</div>
+                            <div class="activity-description">Added new user: Sales Representative 3</div>
+                            <div class="activity-time">30 minutes ago</div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-user">Sales User 1</div>
+                            <div class="activity-description">Processed sale #1042 for 5,240 ETB</div>
+                            <div class="activity-time">1 hour ago</div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-user">Inventory User</div>
+                            <div class="activity-description">Updated stock for 12 products</div>
+                            <div class="activity-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-file-export"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-user">Manager User</div>
+                            <div class="activity-description">Exported monthly sales report</div>
+                            <div class="activity-time">3 hours ago</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quick-actions-card">
+                    <h2 class="section-title">
+                        <i class="fas fa-bolt"></i>
+                        Quick Actions
+                    </h2>
+                    <div class="quick-actions">
+                        <a href="#" class="action-btn">
+                            <i class="fas fa-user-plus"></i>
+                            <span class="action-label">Add User</span>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <i class="fas fa-box"></i>
+                            <span class="action-label">Add Product</span>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <i class="fas fa-file-export"></i>
+                            <span class="action-label">Generate Report</span>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <i class="fas fa-tags"></i>
+                            <span class="action-label">Add Category</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
