@@ -10,6 +10,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+
+
 $user_id = $_SESSION['user_id'];
 $_SESSION['last_activity'] = time();
 
@@ -21,17 +23,17 @@ $stats['total_products'] = $result->fetch_assoc()['total'];
 $result = $conn->query("SELECT COUNT(*) as low FROM products WHERE quantity < minimum_stock");
 $stats['low_stock'] = $result->fetch_assoc()['low'];
 
-$result = $conn->query("SELECT COUNT(*) as total FROM user");
+$result = $conn->query("SELECT COUNT(*) as total FROM users");
 $stats['total_users'] = $result->fetch_assoc()['total'];
 
-$result = $conn->query("SELECT COUNT(*) as total FROM category");
+$result = $conn->query("SELECT COUNT(*) as total FROM categories");
 $stats['total_categories'] = $result->fetch_assoc()['total'];
 
 // Fetch low stock items
 $lowStockItems = [];
 $sql = "SELECT p.product_id, p.product_name, c.category_name, p.quantity, p.minimum_stock 
         FROM products p 
-        JOIN category c ON p.category_id = c.category_id 
+        JOIN categories c ON p.category_id = c.category_id 
         WHERE p.quantity < p.minimum_stock 
         ORDER BY (p.quantity/p.minimum_stock) ASC 
         LIMIT 5";
@@ -47,7 +49,7 @@ $recentMovements = [];
 $sql = "SELECT s.update_id, p.product_name, s.update_type, s.quantity, s.created_at, u.user_name 
         FROM stock_update s
         JOIN products p ON s.product_id = p.product_id
-        JOIN user u ON s.user_id = u.user_id
+        JOIN users u ON s.user_id = u.user_id
         ORDER BY s.created_at DESC 
         LIMIT 5";
 $result = $conn->query($sql);
@@ -61,7 +63,7 @@ if ($result && $result->num_rows > 0) {
 $stockByCategory = [];
 $sql = "SELECT c.category_id, c.category_name, SUM(p.quantity) as total_items 
         FROM products p
-        JOIN category c ON p.category_id = c.category_id
+        JOIN categories c ON p.category_id = c.category_id
         GROUP BY c.category_id, c.category_name";
 $result = $conn->query($sql);
 if ($result && $result->num_rows > 0) {
@@ -81,9 +83,101 @@ $maxItems = max(array_column($stockByCategory, 'total_items')) ?: 1;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($title); ?> - JO TECH</title>
     <style>
-        /* Your existing styles... */
-        
-        /* Additional styles for better visualization */
+               body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f3f4f6;
+            color: #222;
+        }
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            background: #f3f4f6;
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        .bg-white { background: #fff; }
+        .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .rounded-lg { border-radius: 0.5rem; }
+        .p-4 { padding: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .text-lg { font-size: 1.125rem; }
+        .font-semibold { font-weight: 600; }
+        .font-medium { font-weight: 500; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-900 { color: #111827; }
+        .text-2xl { font-size: 1.5rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .text-green-500 { color: #22c55e; }
+        .text-green-800 { color: #166534; }
+        .text-blue-500 { color: #3b82f6; }
+        .text-blue-600 { color: #2563eb; }
+        .text-red-500 { color: #ef4444; }
+        .text-red-800 { color: #991b1b; }
+        .text-purple-500 { color: #a21caf; }
+        .bg-blue-500 { background: #3b82f6; }
+        .bg-green-500 { background: #22c55e; }
+        .bg-yellow-500 { background: #eab308; }
+        .bg-purple-500 { background: #a21caf; }
+        .bg-green-100 { background: #dcfce7; }
+        .bg-red-100 { background: #fee2e2; }
+        .rounded-t { border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+        .rounded-full { border-radius: 9999px; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-row { flex-direction: row; }
+        .items-center { align-items: center; }
+        .items-end { align-items: flex-end; }
+        .justify-between { justify-content: space-between; }
+        .justify-around { justify-content: space-around; }
+        .gap-6 { gap: 1.5rem; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: 1fr; }
+        .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .h-60 { height: 15rem; }
+        .h-6 { height: 1.5rem; }
+        .h-5 { height: 1.25rem; }
+        .w-5 { width: 1.25rem; }
+        .w-6 { width: 1.5rem; }
+        .w-16 { width: 4rem; }
+        .ml-2 { margin-left: 0.5rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .overflow-x-auto { overflow-x: auto; }
+        .overflow-y-auto { overflow-y: auto; }
+        .min-w-full { min-width: 100%; }
+        .divide-y > :not([hidden]) ~ :not([hidden]) { border-top: 1px solid #e5e7eb; }
+        .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb; }
+        .bg-gray-50 { background: #f9fafb; }
+        .whitespace-nowrap { white-space: nowrap; }
+        .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
+        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+        .tracking-wider { letter-spacing: 0.05em; }
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1024px) {
+            .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        }
         .chart-bar {
             transition: height 0.5s ease;
         }
