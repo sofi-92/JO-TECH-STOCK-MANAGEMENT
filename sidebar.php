@@ -3,7 +3,7 @@
 
 // Check if user is logged in
 $userRole = $_SESSION['role'] ?? '';
-$currentPath = $_SERVER['PHP_SELF']; // Gets current PHP file path
+$currentPath = $_SERVER['PHP_SELF'];
 
 // Define navigation items based on user role
 function getNavItems($role) {
@@ -39,6 +39,19 @@ function getNavItems($role) {
 }
 
 $navItems = getNavItems($userRole);
+
+// Handle logout request
+if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+    // Unset all session variables
+    $_SESSION = array();
+    
+    // Destroy the session
+    session_destroy();
+    
+    // Redirect to login page
+    header('Location: login.php');
+    exit;
+}
 ?>
 
 <aside class="sidebar" id="sidebar">
@@ -76,6 +89,12 @@ $navItems = getNavItems($userRole);
                 <span class="user-role"><?php echo ucfirst($userRole); ?></span>
             </div>
         </div>
+        <a href="logout.php" class="logout-btn">
+            <span class="nav-icon">
+                <?php echo getIconSvg2('logout'); ?>
+            </span>
+            <span class="nav-text">Logout</span>
+        </a>
     </div>
 </aside>
 
@@ -97,6 +116,8 @@ function getIconSvg2($iconName) {
             return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
         case 'user':
             return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+        case 'logout':
+            return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
         default:
             return '';
     }
@@ -302,6 +323,9 @@ function getIconSvg2($iconName) {
 .sidebar-footer {
     padding: 1rem;
     border-top: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .user-profile {
@@ -349,6 +373,40 @@ function getIconSvg2($iconName) {
     color: #a0aec0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.sidebar.collapsed .logout-btn {
+    padding: 0.75rem;
+    justify-content: center;
+}
+
+.logout-btn:hover {
+    background-color: rgba(239, 68, 68, 0.3);
+    color: white;
+}
+
+.logout-btn .nav-icon {
+    color: #ef4444;
+}
+
+.logout-btn:hover .nav-icon {
+    color: white;
 }
 
 /* Scrollbar styling */
@@ -400,6 +458,16 @@ document.addEventListener('DOMContentLoaded', function() {
         mainContent.style.marginLeft = isCollapsed ? 
             getComputedStyle(document.documentElement).getPropertyValue('--sidebar-collapsed-width') : 
             getComputedStyle(document.documentElement).getPropertyValue('--sidebar-expanded-width');
+    }
+
+    // Confirm logout
+    const logoutBtn = document.querySelector('.logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            if (!confirm('Are you sure you want to logout?')) {
+                e.preventDefault();
+            }
+        });
     }
 });
 </script>

@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (password_verify($password, $user['password'])) {
                 $_SESSION['user_id'] = $user['user_id'];
                 $_SESSION['username'] = $user['user_name'];
-                $_SESSION['user_role'] = $user['role'];
+                $_SESSION['role'] = $user['role'];
                 
                 // Immediately redirect after successful login
                 switch ($user['role']) {
