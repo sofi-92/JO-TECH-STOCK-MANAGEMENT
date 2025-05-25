@@ -7,11 +7,14 @@ $dbname = 'jotechdb'; // Database name
 $username = 'root'; // Database username
 $password = ''; // Database password
 
-try {
-    // Create a new PDO instance
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+$conn = new mysqli($host, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
+
+// Set charset to utf8mb4 for proper encoding
+$conn->set_charset("utf8mb4");
+?>
 ?>
