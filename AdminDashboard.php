@@ -11,6 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 
+$username = $_SESSION['user']['username'] ?? 'User';
 
 $user_id = $_SESSION['user_id'];
 $_SESSION['last_activity'] = time();
