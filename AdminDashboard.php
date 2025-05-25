@@ -5,11 +5,11 @@ $title = "Admin Dashboard";
 session_start();
 
 // Check if user is logged in
-if (!isset($_SESSION['isAuthenticated'])) {
+/* if (!isset($_SESSION['isAuthenticated'])) {
     header('Location: login.php');
     exit;
 }
-$username = $_SESSION['user']['username'] ?? 'User';
+$username = $_SESSION['user']['username'] ?? 'User'; */
 /* ob_start(); */
 ?>
 

@@ -1,7 +1,7 @@
 <?php
 // procurement.php
 $title = "Procurement Dashboard";
-ob_start();
+
 ?>
 
 <div class="grid grid-cols-1 gap-6 mb-6">

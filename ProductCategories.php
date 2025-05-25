@@ -3,12 +3,93 @@
 $title = "Product Categories";
 session_start();
 
+// Database configuration
+require 'config.php';
+
 // Check if user is logged in
-if (!isset($_SESSION['isAuthenticated'])) {
+/* if (!isset($_SESSION['isAuthenticated'])) {
     header('Location: login.php');
     exit;
+} */
+
+// Handle form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['add_category'])) {
+        // Add new category
+        $name = trim($_POST['category_name']);
+        
+   try {
+    $currentTimestamp = date('Y-m-d H:i:s'); // Get current timestamp
+    $stmt = $pdo->prepare("INSERT INTO categories (category_name, created_at) VALUES (?, ?)");
+    $stmt->execute([$name, $currentTimestamp]);
+    $_SESSION['message'] = "Category added successfully!";
+    $_SESSION['message_type'] = "success";
+    header("Location: ProductCategories.php");
+    exit;
+} catch (PDOException $e) {
+    $_SESSION['message'] = "Error adding category: " . $e->getMessage();
+    $_SESSION['message_type'] = "error";
 }
-$username = $_SESSION['user']['username'] ?? 'User';
+    } elseif (isset($_POST['edit_category'])) {
+        // Update existing category
+        $id = $_POST['category_id'];
+        $name = trim($_POST['category_name']);
+        
+        try {
+            $stmt = $pdo->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
+            $stmt->execute([$name, $id]);
+            $_SESSION['message'] = "Category updated successfully!";
+            $_SESSION['message_type'] = "success";
+            header("Location: ProductCategories.php");
+            exit;
+        } catch (PDOException $e) {
+            $_SESSION['message'] = "Error updating category: " . $e->getMessage();
+            $_SESSION['message_type'] = "error";
+        }
+    } elseif (isset($_POST['delete_category'])) {
+        // Delete category
+        $id = $_POST['category_id'];
+        
+        try {
+            // First check if category has products
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM products WHERE category_id = ?");
+            $stmt->execute([$id]);
+            $productCount = $stmt->fetchColumn();
+            
+            if ($productCount > 0) {
+                $_SESSION['message'] = "Cannot delete category with products. Please reassign or delete products first.";
+                $_SESSION['message_type'] = "error";
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM categories WHERE category_id = ?");
+                $stmt->execute([$id]);
+                $_SESSION['message'] = "Category deleted successfully!";
+                $_SESSION['message_type'] = "success";
+            }
+            header("Location: ProductCategories.php");
+            exit;
+        } catch (PDOException $e) {
+            $_SESSION['message'] = "Error deleting category: " . $e->getMessage();
+            $_SESSION['message_type'] = "error";
+        }
+    }
+}
+
+// Fetch all categories with product counts
+try {
+    $stmt = $pdo->query("
+        SELECT c.category_id, c.category_name, c.created_at, 
+               COUNT(p.product_id) as product_count
+        FROM categories c
+        LEFT JOIN products p ON c.category_id = p.category_id
+        GROUP BY c.category_id
+        ORDER BY c.category_name
+    ");
+    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $categories = [];
+    $_SESSION['message'] = "Error fetching categories: " . $e->getMessage();
+    $_SESSION['message_type'] = "error";
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,351 +98,497 @@ $username = $_SESSION['user']['username'] ?? 'User';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($title); ?> - JO TECH</title>
     <style>
+        /* Base Styles */
         body, html {
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Arial, sans-serif;
             background: #f3f4f6;
             color: #222;
+            line-height: 1.5;
         }
+        
+        /* Dashboard Layout */
         .dashboard-container {
             display: flex;
             min-height: 100vh;
             background: #f3f4f6;
         }
+        
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
+        
         .content-area {
             flex: 1;
             overflow-y: auto;
             padding: 1.5rem;
         }
-        /* Utility classes */
+        
+        /* Utility Classes */
         .bg-white { background: #fff; }
-        .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
+        .shadow-sm { box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .rounded-lg { border-radius: 0.5rem; }
         .p-4 { padding: 1rem; }
         .p-6 { padding: 1.5rem; }
         .mb-4 { margin-bottom: 1rem; }
         .mb-6 { margin-bottom: 1.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mr-2 { margin-right: 0.5rem; }
+        .ml-3 { margin-left: 0.75rem; }
         .text-lg { font-size: 1.125rem; }
         .font-semibold { font-weight: 600; }
-        .text-white{ color: #fff; }
         .text-gray-600 { color: #4b5563; }
-        .text-gray-500 { color: #6b7280; }
         .text-gray-700 { color: #374151; }
-        .text-gray-900 { color: #111827; }
         .text-blue-500 { color: #3b82f6; }
         .text-blue-600 { color: #2563eb; }
-        .text-blue-700 { color: #1d4ed8; }
         .text-red-600 { color: #dc2626; }
-        .text-red-900 { color: #7f1d1d; }
-        .bg-blue-600 { background: #2563eb; }
-        .bg-blue-700 { background: #1d4ed8; }
-        .hover\:bg-blue-700:hover { background: #1d4ed8; }
-        .hover\:bg-gray-50:hover { background: #f9fafb; }
         .hover\:text-blue-900:hover { color: #1e40af; }
-        .hover\:text-red-900:hover { color: #7f1d1d; }
-        .bg-gray-50 { background: #f9fafb; }
-        .bg-gray-500 { background: #6b7280; }
-        .bg-blue-100 { background: #dbeafe; }
-        .border { border-width: 1px; border-style: solid; border-color: #d1d5db; }
-        .border-gray-300 { border-color: #d1d5db; }
-        .border-transparent { border-color: transparent; }
-        .rounded-md { border-radius: 0.375rem; }
-        .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
-        .w-full { width: 100%; }
-        .h-4 { height: 1rem; }
-        .w-4 { width: 1rem; }
-        .h-5 { height: 1.25rem; }
-        .w-5 { width: 1.25rem; }
-        .h-6 { height: 1.5rem; }
-        .w-6 { width: 1.5rem; }
-        .mr-2 { margin-right: 0.5rem; }
-        .mr-4 { margin-right: 1rem; }
-        .ml-3 { margin-left: 0.75rem; }
-        .ml-4 { margin-left: 1rem; }
-        .mt-1 { margin-top: 0.25rem; }
-        .mt-3 { margin-top: 0.75rem; }
-        .mt-4 { margin-top: 1rem; }
-        .mb-0 { margin-bottom: 0; }
-        .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
-        .space-x-4 > :not([hidden]) ~ :not([hidden]) { margin-left: 1rem; }
+        .hover\:text-red-900:hover { color: #991b1b; }
         .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .flex-row { flex-direction: row; }
         .items-center { align-items: center; }
-        .items-start { align-items: flex-start; }
         .justify-between { justify-content: space-between; }
-        .justify-center { justify-content: center; }
-        .inline-flex { display: inline-flex; }
-        .inline-block { display: inline-block; }
-        .block { display: block; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .gap-6 { gap: 1.5rem; }
         .hidden { display: none; }
+        .w-full { width: 100%; }
         .overflow-x-auto { overflow-x: auto; }
-        .overflow-y-auto { overflow-y: auto; }
-        .overflow-hidden { overflow: hidden; }
+        .divide-y > :not([hidden]) ~ :not([hidden]) { border-top-width: 1px; }
+        .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb; }
+        
+        /* Table Styles */
         .min-w-full { min-width: 100%; }
-        .min-h-screen { min-height: 100vh; }
-        .max-w-lg { max-width: 32rem; }
-        .sm\:block { display: block; }
-        .sm\:inline-block { display: inline-block; }
-        .sm\:align-middle { vertical-align: middle; }
-        .sm\:h-10 { height: 2.5rem; }
-        .sm\:w-10 { width: 2.5rem; }
-        .sm\:my-8 { margin-top: 2rem; margin-bottom: 2rem; }
-        .sm\:ml-3 { margin-left: 0.75rem; }
-        .sm\:mt-0 { margin-top: 0; }
-        .sm\:w-auto { width: auto; }
-        .sm\:text-sm { font-size: 0.875rem; }
-        .sm\:p-0 { padding: 0; }
-        .sm\:pb-4 { padding-bottom: 1rem; }
-        .sm\:px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
-        .sm\:flex { display: flex; }
-        .sm\:items-start { align-items: flex-start; }
-        .sm\:justify-center { justify-content: center; }
-        .sm\:ml-4 { margin-left: 1rem; }
-        .sm\:mt-0 { margin-top: 0; }
-        .sm\:ml-3 { margin-left: 0.75rem; }
-        .sm\:w-auto { width: auto; }
-        .sm\:text-sm { font-size: 0.875rem; }
-        .sm\:p-6 { padding: 1.5rem; }
-        .sm\:pb-4 { padding-bottom: 1rem; }
-        .sm\:my-8 { margin-top: 2rem; margin-bottom: 2rem; }
-        .sm\:align-middle { vertical-align: middle; }
-        .sm\:max-w-lg { max-width: 32rem; }
-        .sm\:w-full { width: 100%; }
-        .pointer-events-none { pointer-events: none; }
-        .absolute { position: absolute; }
-        .relative { position: relative; }
-        .fixed { position: fixed; }
-        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-        .inset-y-0 { top: 0; bottom: 0; }
-        .left-0 { left: 0; }
-        .right-0 { right: 0; }
-        .top-0 { top: 0; }
-        .bottom-0 { bottom: 0; }
-        .z-10 { z-index: 10; }
-        .z-50 { z-index: 50; }
-        .rounded-full { border-radius: 9999px; }
+        .table-auto { table-layout: auto; }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+        }
+        td {
+            font-size: 0.875rem;
+            color: #374151;
+        }
         .whitespace-nowrap { white-space: nowrap; }
-        .leading-5 { line-height: 1.25rem; }
-        .leading-6 { line-height: 1.5rem; }
-        .font-medium { font-weight: 500; }
-        .font-semibold { font-weight: 600; }
-        .uppercase { text-transform: uppercase; }
-        .tracking-wider { letter-spacing: 0.05em; }
-        .text-base { font-size: 1rem; }
-        .text-xs { font-size: 0.75rem; }
-        .shadow-xl { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
-        .transition-opacity { transition: opacity 0.2s; }
-        .transform { transform: none; }
-        .focus\:outline-none:focus { outline: none; }
-        .focus\:ring-1:focus { box-shadow: 0 0 0 1px #2563eb; }
-        .focus\:ring-2:focus { box-shadow: 0 0 0 2px #2563eb; }
-        .focus\:ring-blue-500:focus { box-shadow: 0 0 0 2px #3b82f6; }
-        .focus\:border-blue-500:focus { border-color: #3b82f6; }
-        .focus\:ring-offset-2:focus { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2563eb; }
-        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-        </style>
+        
+        /* Form Elements */
+        input[type="text"] {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            line-height: 1.25rem;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+        
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            border: 1px solid transparent;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+            border: 1px solid transparent;
+        }
+        
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #f9fafb;
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        
+        .modal-container {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 32rem;
+            margin: 1rem;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        
+        /* Icons */
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        .icon-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+        
+        /* Alert Messages */
+        .alert {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+        
+        .alert-success {
+            color: #166534;
+            background-color: #dcfce7;
+            border-color: #bbf7d0;
+        }
+        
+        .alert-error {
+            color: #991b1b;
+            background-color: #fee2e2;
+            border-color: #fecaca;
+        }
+        
+        /* Search Input */
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 24rem;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+        
+        .search-input {
+            padding-left: 2.25rem;
+            width: 100%;
+        }
+        
+        /* Responsive Adjustments */
+        @media (min-width: 768px) {
+            .md\:flex-row {
+                flex-direction: row;
+            }
+            
+            .md\:items-center {
+                align-items: center;
+            }
+            
+            .md\:space-x-4 > :not([hidden]) ~ :not([hidden]) {
+                margin-left: 1rem;
+            }
+        }
+    </style>
 </head>
 <body class="dashboard-container">
     <?php include 'sidebar.php'; ?>
     
     <div class="main-content">
-        <?php 
-        // Include header with the current title
-        include 'header.php'; 
-        ?>
+        <?php include 'header.php'; ?>
         
         <main class="content-area">
-
-
-<div class="grid grid-cols-1 gap-6 mb-6">
-    <div class="bg-white p-4 shadow-sm rounded-lg">
-        <h2 class="text-lg font-semibold mb-4">
-            Product Categories Management
-        </h2>
-        <p class="text-gray-600">
-            Manage product categories to organize your inventory efficiently.
-        </p>
-    </div>
-</div>
-
-<div class="bg-white p-6 rounded-lg shadow-sm mb-6">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <div class="flex items-center mb-4 md:mb-0">
-            <?= getIconSvg('tag', 'h-5 w-5 text-blue-500 mr-2') ?>
-            <h2 class="text-lg font-semibold">Categories</h2>
-        </div>
-        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <?= getIconSvg('search', 'h-5 w-5 text-gray-400') ?>
+            <!-- Display messages -->
+            <?php if (isset($_SESSION['message'])): ?>
+                <div class="alert alert-<?= $_SESSION['message_type'] ?> mb-6">
+                    <?= $_SESSION['message'] ?>
                 </div>
-                <input type="text" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search categories..." />
-            </div>
-            <button onclick="openModal('add')" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <?= getIconSvg('plus', 'h-4 w-4 mr-2') ?>
-                Add Category
-            </button>
-        </div>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                <?php
-                $categories = [
-                    ['id' => 1, 'name' => 'Stationery', 'description' => 'Office supplies like pens, papers, notebooks', 'productCount' => 543, 'createdAt' => '2023-01-15'],
-                    ['id' => 2, 'name' => 'Computers', 'description' => 'Laptops, desktops, and computer parts', 'productCount' => 328, 'createdAt' => '2023-01-15'],
-                    ['id' => 3, 'name' => 'Accessories', 'description' => 'Computer peripherals and accessories', 'productCount' => 413, 'createdAt' => '2023-02-20'],
-                    ['id' => 4, 'name' => 'Printers', 'description' => 'Printers and printing supplies', 'productCount' => 124, 'createdAt' => '2023-03-05'],
-                    ['id' => 5, 'name' => 'Networking', 'description' => 'Networking equipment and cables', 'productCount' => 89, 'createdAt' => '2023-04-10']
-                ];
-                
-                foreach ($categories as $category): ?>
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= $category['name'] ?></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $category['description'] ?></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $category['productCount'] ?></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $category['createdAt'] ?></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onclick="openModal('edit', <?= htmlspecialchars(json_encode($category)) ?>)" class="text-blue-600 hover:text-blue-900 mr-4">
-                            <?= getIconSvg('edit', 'h-4 w-4') ?>
-                        </button>
-                        <button onclick="confirmDelete(<?= $category['id'] ?>)" class="text-red-600 hover:text-red-900">
-                            <?= getIconSvg('trash-2', 'h-4 w-4') ?>
-                        </button>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-</div>
+                <?php unset($_SESSION['message'], $_SESSION['message_type']); ?>
+            <?php endif; ?>
 
-<!-- Category Modal -->
-<div id="categoryModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true" onclick="closeModal()">
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-        </div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                        <?= getIconSvg('tag', 'h-6 w-6 text-blue-600') ?>
+            <div class="grid grid-cols-1 gap-6 mb-6">
+                <div class="bg-white p-4 shadow-sm rounded-lg">
+                    <h2 class="text-lg font-semibold mb-4">
+                        Product Categories Management
+                    </h2>
+                    <p class="text-gray-600">
+                        Manage product categories to organize your inventory efficiently.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <div class="flex items-center mb-4 md:mb-0">
+                        <span class="icon text-blue-500 mr-2">
+                            <?= getIconSvg('tag') ?>
+                        </span>
+                        <h2 class="text-lg font-semibold">Categories</h2>
                     </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                        <h3 id="modalTitle" class="text-lg leading-6 font-medium text-gray-900"></h3>
-                        <div class="mt-4 space-y-4">
-                            <div>
-                                <label for="categoryName" class="block text-sm font-medium text-gray-700">Category Name</label>
-                                <input type="text" name="categoryName" id="categoryName" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Enter category name">
-                            </div>
-                            <div>
-                                <label for="categoryDescription" class="block text-sm font-medium text-gray-700">Description</label>
-                                <textarea name="categoryDescription" id="categoryDescription" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Enter category description"></textarea>
-                            </div>
+                    <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                        <div class="search-container">
+                            <span class="search-icon icon">
+                                <?= getIconSvg('search') ?>
+                            </span>
+                            <input type="text" id="searchInput" class="search-input" placeholder="Search categories...">
                         </div>
+                        <button onclick="openModal('add')" class="btn btn-primary">
+                            <span class="icon icon-sm mr-2">
+                                <?= getIconSvg('plus') ?>
+                            </span>
+                            Add Category
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="categoriesTable">
+                            <?php foreach ($categories as $category): ?>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap"><?= htmlspecialchars($category['category_name']) ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap"><?= $category['product_count'] ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap"><?= date('Y-m-d', strtotime($category['created_at'])) ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <button onclick="openModal('edit', <?= htmlspecialchars(json_encode($category)) ?>)" class="text-blue-600 hover:text-blue-900 mr-4">
+                                        <span class="icon icon-sm">
+                                            <?= getIconSvg('edit') ?>
+                                        </span>
+                                    </button>
+                                    <button onclick="confirmDelete(<?= $category['category_id'] ?>)" class="text-red-600 hover:text-red-900">
+                                        <span class="icon icon-sm">
+                                            <?= getIconSvg('trash-2') ?>
+                                        </span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Category Modal -->
+            <div id="categoryModal" class="hidden">
+                <div class="modal-overlay" onclick="closeModal()">
+                    <div class="modal-container" onclick="event.stopPropagation()">
+                        <form id="categoryForm" method="POST" action="ProductCategories.php">
+                            <input type="hidden" name="category_id" id="formCategoryId">
+                            <div class="modal-header">
+                                <div class="flex items-center justify-center rounded-full bg-blue-100 p-2 mr-4">
+                                    <span class="icon text-blue-600">
+                                        <?= getIconSvg('tag') ?>
+                                    </span>
+                                </div>
+                                <h3 id="modalTitle" class="text-lg font-semibold"></h3>
+                            </div>
+                            <div class="modal-body">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="categoryName" class="block text-sm font-medium text-gray-700 mb-1">Category Name *</label>
+                                        <input type="text" name="category_name" id="categoryName" required class="w-full" placeholder="Enter category name">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" onclick="closeModal()" class="btn btn-secondary">
+                                    Cancel
+                                </button>
+                                <button type="submit" id="saveButton" name="add_category" class="btn btn-primary">
+                                    Add
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button type="button" id="saveButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
-                    Add
-                </button>
-                <button type="button" onclick="closeModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                    Cancel
-                </button>
+
+            <!-- Delete Confirmation Modal -->
+            <div id="deleteModal" class="hidden">
+                <div class="modal-overlay">
+                    <div class="modal-container" onclick="event.stopPropagation()">
+                        <form id="deleteForm" method="POST" action="ProductCategories.php">
+                            <input type="hidden" name="category_id" id="deleteCategoryId">
+                            <input type="hidden" name="delete_category" value="1">
+                            <div class="modal-header">
+                                <div class="flex items-center justify-center rounded-full bg-red-100 p-2 mr-4">
+                                    <span class="icon text-red-600">
+                                        <?= getIconSvg('alert-triangle') ?>
+                                    </span>
+                                </div>
+                                <h3 class="text-lg font-semibold">Delete Category</h3>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-gray-700">Are you sure you want to delete this category? This action cannot be undone.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">
+                                    Cancel
+                                </button>
+                                <button type="submit" class="btn btn-danger">
+                                    Delete
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
-</div>
- </main>
-    </div>
+
+    <script>
+    // Modal functions
+    function openModal(mode, category = null) {
+        const modal = document.getElementById('categoryModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const saveButton = document.getElementById('saveButton');
+        const categoryForm = document.getElementById('categoryForm');
+        const formCategoryId = document.getElementById('formCategoryId');
+        const categoryName = document.getElementById('categoryName');
+        
+        if (mode === 'add') {
+            modalTitle.textContent = 'Add New Category';
+            saveButton.textContent = 'Add';
+            saveButton.name = 'add_category';
+            categoryForm.reset();
+            formCategoryId.value = '';
+        } else if (mode === 'edit' && category) {
+            modalTitle.textContent = 'Edit Category';
+            saveButton.textContent = 'Save';
+            saveButton.name = 'edit_category';
+            formCategoryId.value = category.category_id;
+            categoryName.value = category.category_name;
+        }
+        
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('categoryModal').classList.add('hidden');
+    }
+
+    function confirmDelete(categoryId) {
+        document.getElementById('deleteCategoryId').value = categoryId;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const searchValue = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#categoriesTable tr');
+        
+        rows.forEach(row => {
+            const name = row.cells[0].textContent.toLowerCase();
+            if (name.includes(searchValue)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // Form validation
+    document.getElementById('categoryForm').addEventListener('submit', function(e) {
+        const name = document.getElementById('categoryName').value.trim();
+        if (!name) {
+            e.preventDefault();
+            alert('Category name is required');
+            document.getElementById('categoryName').focus();
+        }
+    });
+    </script>
+
+    <?php
+    function getIconSvg($iconName) {
+        $icons = [
+            'tag' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>',
+            'search' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>',
+            'plus' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>',
+            'edit' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>',
+            'trash-2' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>',
+            'alert-triangle' => '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>'
+        ];
+        
+        return $icons[$iconName] ?? '';
+    }
+    ?>
 </body>
 </html>
-
-<script>
-function openModal(mode, category = null) {
-    const modal = document.getElementById('categoryModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const saveButton = document.getElementById('saveButton');
-    const categoryName = document.getElementById('categoryName');
-    const categoryDescription = document.getElementById('categoryDescription');
-    
-    if (mode === 'add') {
-        modalTitle.textContent = 'Add New Category';
-        saveButton.textContent = 'Add';
-        categoryName.value = '';
-        categoryDescription.value = '';
-    } else if (mode === 'edit' && category) {
-        modalTitle.textContent = 'Edit Category';
-        saveButton.textContent = 'Save';
-        categoryName.value = category.name;
-        categoryDescription.value = category.description;
-    }
-    
-    modal.classList.remove('hidden');
-}
-
-function closeModal() {
-    document.getElementById('categoryModal').classList.add('hidden');
-}
-
-function confirmDelete(categoryId) {
-    if (confirm('Are you sure you want to delete this category?')) {
-        // In a real app, you would submit a form or make an AJAX request to delete the category
-        alert('Category would be deleted here (implementation needed)');
-        // window.location.href = `delete_category.php?id=${categoryId}`;
-    }
-}
-
-// Handle form submission
-document.getElementById('saveButton').addEventListener('click', function() {
-    const categoryName = document.getElementById('categoryName').value;
-    const categoryDescription = document.getElementById('categoryDescription').value;
-    
-    if (!categoryName) {
-        alert('Category name is required');
-        return;
-    }
-    
-    // In a real app, you would submit a form or make an AJAX request here
-    alert(`Category would be saved here:\nName: ${categoryName}\nDescription: ${categoryDescription}`);
-    closeModal();
-});
-</script>
-
-<?php
-
-
-// Add these icons to your getIconSvg function if not already present
-function getIconSvg($iconName, $classes = '') {
-    $icons = [
-        'tag' => '<svg xmlns="http://www.w3.org/2000/svg" class="'.$classes.'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>',
-        'search' => '<svg xmlns="http://www.w3.org/2000/svg" class="'.$classes.'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
-        'plus' => '<svg xmlns="http://www.w3.org/2000/svg" class="'.$classes.'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>',
-        'edit' => '<svg xmlns="http://www.w3.org/2000/svg" class="'.$classes.'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>',
-        'trash-2' => '<svg xmlns="http://www.w3.org/2000/svg" class="'.$classes.'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>'
-    ];
-    
-    return $icons[$iconName] ?? '';
-}
-?>
