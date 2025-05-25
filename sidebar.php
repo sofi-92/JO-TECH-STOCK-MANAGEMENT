@@ -1,11 +1,8 @@
 <?php
 // sidebar.php
 
-
 // Check if user is logged in
-
-
-$userRole = $_SESSION['user']['role'] ?? '';
+$userRole = $_SESSION['role'] ?? '';
 $currentPath = $_SERVER['PHP_SELF']; // Gets current PHP file path
 
 // Define navigation items based on user role
@@ -44,22 +41,42 @@ function getNavItems($role) {
 $navItems = getNavItems($userRole);
 ?>
 
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-        <h2>JO TECH</h2>
+        <div class="logo-container">
+            <img src="images/Qoricha logo.png" alt="JO TECH Logo" class="logo">
+        </div>
+        <h2 class="company-name">JO TECH</h2>
+        <button class="toggle-btn" id="toggleSidebar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12h18M3 6h18M3 18h18"></path>
+            </svg>
+        </button>
     </div>
     <nav class="sidebar-nav">
         <div class="nav-items">
             <?php foreach ($navItems as $item): ?>
-                <a href="<?php echo $item['path']; ?>" class="nav-item <?php echo basename($currentPath) === $item['path'] ? 'active' : ''; ?>">
+                <a href="<?php echo $item['path']; ?>" class="nav-item <?php echo basename($currentPath) === basename($item['path']) ? 'active' : ''; ?>">
                     <span class="nav-icon">
                         <?php echo getIconSvg2($item['icon']); ?>
                     </span>
                     <span class="nav-text"><?php echo $item['name']; ?></span>
+                    <span class="active-indicator"></span>
                 </a>
             <?php endforeach; ?>
         </div>
     </nav>
+    <div class="sidebar-footer">
+        <div class="user-profile">
+            <div class="avatar">
+                <?php echo getIconSvg2('user'); ?>
+            </div>
+            <div class="user-info">
+                <span class="user-name"><?php echo $_SESSION['user']['name'] ?? 'User'; ?></span>
+                <span class="user-role"><?php echo ucfirst($userRole); ?></span>
+            </div>
+        </div>
+    </div>
 </aside>
 
 <?php
@@ -78,6 +95,8 @@ function getIconSvg2($iconName) {
             return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>';
         case 'alert-triangle':
             return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+        case 'user':
+            return '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
         default:
             return '';
     }
@@ -85,63 +104,158 @@ function getIconSvg2($iconName) {
 ?>
 
 <style>
-.sidebar {
-    background-color: #1f2937;
-    color: white;
-    width: 16rem;
-    display: none;
-    flex-shrink: 0;
+:root {
+    --sidebar-bg: #1a365d;
+    --sidebar-text: #e2e8f0;
+    --sidebar-hover: #2c5282;
+    --sidebar-active: #3182ce;
+    --sidebar-border: #2d3748;
+    --sidebar-indicator: #4299e1;
+    --sidebar-header: #1e429f;
+    --sidebar-collapsed-width: 80px;
+    --sidebar-expanded-width: 260px;
 }
 
-@media (min-width: 768px) {
-    .sidebar {
-        display: block;
-    }
+.sidebar {
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    width: var(--sidebar-expanded-width);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 50;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow-y: auto;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
 }
 
 .sidebar-header {
-    height: 4rem;
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    position: relative;
+}
+
+.logo-container {
+    width: 60px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid #374151;
+    background-color: white;
+    border-radius: 50%;
+    padding: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
-.sidebar-header h2 {
+.sidebar.collapsed .logo-container {
+    width: 48px;
+    height: 48px;
+}
+
+.logo {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.company-name {
     font-size: 1.25rem;
-    font-weight: bold;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar.collapsed .company-name {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.toggle-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--sidebar-text);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-btn:hover {
+    background-color: var(--sidebar-hover);
+    transform: rotate(90deg);
 }
 
 .sidebar-nav {
-    margin-top: 1.25rem;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    flex: 1;
+    padding: 1rem 0;
+    overflow-y: auto;
 }
 
 .nav-items {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    padding: 0 0.75rem;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
     border-radius: 0.375rem;
-    color: #d1d5db;
+    color: var(--sidebar-text);
     text-decoration: none;
+    position: relative;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar.collapsed .nav-item {
+    padding: 0.75rem;
+    justify-content: center;
 }
 
 .nav-item:hover {
-    background-color: #374151;
+    background-color: var(--sidebar-hover);
     color: white;
+    transform: translateX(4px);
+}
+
+.sidebar.collapsed .nav-item:hover {
+    transform: none;
 }
 
 .nav-item.active {
-    background-color: #111827;
+    background-color: var(--sidebar-active);
+    color: white;
+    font-weight: 600;
+}
+
+.nav-item.active .nav-icon {
     color: white;
 }
 
@@ -149,9 +263,143 @@ function getIconSvg2($iconName) {
     margin-right: 0.75rem;
     display: flex;
     align-items: center;
+    color: var(--sidebar-text);
+    transition: color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.sidebar.collapsed .nav-icon {
+    margin-right: 0;
 }
 
 .nav-text {
-    margin-top: 0.125rem; /* Small adjustment for better alignment */
+    flex: 1;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar.collapsed .nav-text {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.active-indicator {
+    position: absolute;
+    left: -8px;
+    height: 60%;
+    width: 4px;
+    background-color: var(--sidebar-indicator);
+    border-radius: 0 4px 4px 0;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.nav-item.active .active-indicator {
+    opacity: 1;
+}
+
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--sidebar-border);
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sidebar.collapsed .user-profile {
+    justify-content: center;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--sidebar-active);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.3s ease;
+    overflow: hidden;
+}
+
+.sidebar.collapsed .user-info {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.user-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Scrollbar styling */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: var(--sidebar-bg);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background-color: var(--sidebar-hover);
+    border-radius: 3px;
+}
+
+/* Add smooth transition for main content when sidebar collapses */
+.main-content {
+    margin-left: var(--sidebar-expanded-width);
+    transition: margin-left 0.3s ease;
+}
+
+.sidebar.collapsed ~ .main-content {
+    margin-left: var(--sidebar-collapsed-width);
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggleSidebar');
+    
+    // Check localStorage for saved state
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed) {
+        sidebar.classList.add('collapsed');
+    }
+    
+    // Toggle sidebar
+    toggleBtn.addEventListener('click', function() {
+        sidebar.classList.toggle('collapsed');
+        // Save state to localStorage
+        localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+    });
+    
+    // Adjust main content margin
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.style.marginLeft = isCollapsed ? 
+            getComputedStyle(document.documentElement).getPropertyValue('--sidebar-collapsed-width') : 
+            getComputedStyle(document.documentElement).getPropertyValue('--sidebar-expanded-width');
+    }
+});
+</script>

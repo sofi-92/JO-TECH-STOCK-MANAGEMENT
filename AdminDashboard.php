@@ -2,19 +2,17 @@
 require 'config.php';
 $title = 'Admin Dashboard';
 
-// Session validation
-/* if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'manager'])) {
+session_start();
+
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
 
-// Session expiration (30 minutes)
-if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > 1800)) {
-    session_unset();
-    session_destroy();
-    header('Location: login.php');
-    exit;
-} */
+require_once 'config.php'; // Your MySQLi connection file
+
+$user_id = $_SESSION['user_id'];
 
 $_SESSION['last_activity'] = time();
 ?>
