@@ -1,16 +1,21 @@
 <?php
-// admin.php
-$title = "Admin Dashboard";
+require 'config.php';
 
-session_start();
-
-// Check if user is logged in
-if (!isset($_SESSION['isAuthenticated'])) {
+// Session validation
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'manager'])) {
     header('Location: login.php');
     exit;
 }
-$username = $_SESSION['user']['username'] ?? 'User';
-/* ob_start(); */
+
+// Session expiration (30 minutes)
+if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > 1800)) {
+    session_unset();
+    session_destroy();
+    header('Location: login.php');
+    exit;
+}
+
+$_SESSION['last_activity'] = time();
 ?>
 
 <!DOCTYPE html>
