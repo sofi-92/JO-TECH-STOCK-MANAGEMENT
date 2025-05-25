@@ -1,8 +1,96 @@
 <?php
 // procurement.php
+session_start();
+require_once 'config.php';
+
+// Check if user is logged in and has procurement role
+/* if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'procurement') {
+    header('Location: login.php');
+    exit;
+} */
+
 $title = "Procurement Dashboard";
 
+// Fetch dashboard statistics
+$stats = [
+    'low_stock' => 0,
+    'stock_decrements' => 0,
+    'total_products' => 0,
+    'total_categories' => 0
+];
+
+// 1. Low Stock Items Count
+$result = $conn->query("SELECT COUNT(*) AS count FROM products WHERE quantity < minimum_stock");
+if ($result) $stats['low_stock'] = $result->fetch_assoc()['count'];
+
+// 2. Stock Decrements Count
+$result = $conn->query("SELECT COUNT(*) AS count FROM stock_update WHERE update_type = 'decrement'");
+if ($result) $stats['stock_decrements'] = $result->fetch_assoc()['count'];
+
+// 3. Total Products
+$result = $conn->query("SELECT COUNT(*) AS count FROM products");
+if ($result) $stats['total_products'] = $result->fetch_assoc()['count'];
+
+// 4. Total Categories
+$result = $conn->query("SELECT COUNT(*) AS count FROM categories");
+if ($result) $stats['total_categories'] = $result->fetch_assoc()['count'];
+
+// Fetch Low Stock Items with last update information
+$lowStockItems = [];
+$sql = "SELECT p.*, c.category_name, 
+        (SELECT su.created_at FROM stock_update su 
+         WHERE su.product_id = p.product_id 
+         ORDER BY su.created_at DESC LIMIT 1) AS last_updated,
+        (SELECT u.user_name FROM stock_update su 
+         JOIN users u ON su.user_id = u.user_id 
+         WHERE su.product_id = p.product_id 
+         ORDER BY su.created_at DESC LIMIT 1) AS last_updated_by
+        FROM products p
+        JOIN categories c ON p.category_id = c.category_id
+        WHERE p.quantity < p.minimum_stock
+        ORDER BY (p.quantity/p.minimum_stock) ASC
+        LIMIT 8";
+$result = $conn->query($sql);
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $lowStockItems[] = $row;
+    }
+}
+
+// Fetch Recent Stock Decrements
+$recentDecrements = [];
+$sql = "SELECT su.*, p.product_name, u.user_name 
+        FROM stock_update su
+        JOIN products p ON su.product_id = p.product_id
+        JOIN users u ON su.user_id = u.user_id
+        WHERE su.update_type = 'decrement'
+        ORDER BY su.created_at DESC
+        LIMIT 4";
+$result = $conn->query($sql);
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $recentDecrements[] = $row;
+    }
+}
+
+// Fetch Stock by Category
+$stockByCategory = [];
+$sql = "SELECT c.category_name, SUM(p.quantity) AS total_quantity
+        FROM products p
+        JOIN categories c ON p.category_id = c.category_id
+        GROUP BY c.category_id
+        ORDER BY total_quantity DESC";
+$result = $conn->query($sql);
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $stockByCategory[] = $row;
+    }
+}
+
+// Calculate total stock for percentage calculations
+$totalStock = array_sum(array_column($stockByCategory, 'total_quantity'));
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -363,29 +451,23 @@ $title = "Procurement Dashboard";
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <!-- Stats Cards -->
+                <!-- Updated Stats Cards -->
                 <div class="card p-6 hover:shadow-lg transition duration-200">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-sm font-medium text-gray-500">Low Stock Items</h3>
                         <?= getIconSvg('alert-triangle', 'h-6 w-6 text-danger') ?>
                     </div>
-                    <p class="text-2xl font-semibold mb-1">8</p>
-                    <div class="flex items-center text-sm text-danger">
-                        <?= getIconSvg('trending-up', 'h-4 w-4 mr-1') ?>
-                        <span>2 more than last week</span>
-                    </div>
+                    <p class="text-2xl font-semibold mb-1"><?= $stats['low_stock'] ?></p>
+                    <div class="text-sm text-gray-500">Needing immediate attention</div>
                 </div>
 
                 <div class="card p-6 hover:shadow-lg transition duration-200">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-medium text-gray-500">Pending Orders</h3>
-                        <?= getIconSvg('shopping-cart', 'h-6 w-6 text-warning') ?>
+                        <h3 class="text-sm font-medium text-gray-500">Stock Decrements</h3>
+                        <?= getIconSvg('trending-down', 'h-6 w-6 text-warning') ?>
                     </div>
-                    <p class="text-2xl font-semibold mb-1">3</p>
-                    <div class="flex items-center text-sm text-success">
-                        <?= getIconSvg('trending-down', 'h-4 w-4 mr-1') ?>
-                        <span>1 less than last week</span>
-                    </div>
+                    <p class="text-2xl font-semibold mb-1"><?= $stats['stock_decrements'] ?></p>
+                    <div class="text-sm text-gray-500">Recent inventory reductions</div>
                 </div>
 
                 <div class="card p-6 hover:shadow-lg transition duration-200">
@@ -393,22 +475,19 @@ $title = "Procurement Dashboard";
                         <h3 class="text-sm font-medium text-gray-500">Total Products</h3>
                         <?= getIconSvg('box', 'h-6 w-6 text-primary') ?>
                     </div>
-                    <p class="text-2xl font-semibold mb-1">1,284</p>
+                    <p class="text-2xl font-semibold mb-1"><?= $stats['total_products'] ?></p>
                     <div class="text-sm text-gray-500">
-                        <span>Across 15 categories</span>
+                        Across <?= $stats['total_categories'] ?> categories
                     </div>
                 </div>
 
                 <div class="card p-6 hover:shadow-lg transition duration-200">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-medium text-gray-500">Active Suppliers</h3>
-                        <?= getIconSvg('users', 'h-6 w-6 text-success') ?>
+                        <h3 class="text-sm font-medium text-gray-500">Total Categories</h3>
+                        <?= getIconSvg('tag', 'h-6 w-6 text-success') ?>
                     </div>
-                    <p class="text-2xl font-semibold mb-1">24</p>
-                    <div class="flex items-center text-sm text-success">
-                        <?= getIconSvg('trending-up', 'h-4 w-4 mr-1') ?>
-                        <span>2 new this month</span>
-                    </div>
+                    <p class="text-2xl font-semibold mb-1"><?= $stats['total_categories'] ?></p>
+                    <div class="text-sm text-gray-500">Product classifications</div>
                 </div>
             </div>
 
@@ -425,9 +504,12 @@ $title = "Procurement Dashboard";
                         <div class="relative">
                             <select class="w-full sm:w-auto">
                                 <option value="">All Categories</option>
-                                <option value="Stationery">Stationery</option>
-                                <option value="Computers">Computers</option>
-                                <option value="Accessories">Accessories</option>
+                                <?php
+                                $categories = $conn->query("SELECT * FROM category");
+                                while ($cat = $categories->fetch_assoc()) {
+                                    echo "<option value='{$cat['category_id']}'>{$cat['category_name']}</option>";
+                                }
+                                ?>
                             </select>
                         </div>
                         <button class="btn btn-primary h-fit">
@@ -444,32 +526,20 @@ $title = "Procurement Dashboard";
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Required</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Order</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated By</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <?php
-                            $lowStockItems = [
-                                ['id' => 1, 'name' => 'HP Printer Ink (Black)', 'category' => 'Accessories', 'currentStock' => 5, 'minRequired' => 10, 'lastOrder' => '2023-06-15', 'supplier' => 'Tech Supplies Inc.'],
-                                ['id' => 2, 'name' => 'A4 Paper Reams', 'category' => 'Stationery', 'currentStock' => 12, 'minRequired' => 20, 'lastOrder' => '2023-06-28', 'supplier' => 'Paper World'],
-                                ['id' => 3, 'name' => 'Dell Laptop Chargers', 'category' => 'Computers', 'currentStock' => 3, 'minRequired' => 5, 'lastOrder' => '2023-05-12', 'supplier' => 'Dell Direct'],
-                                ['id' => 4, 'name' => 'Wireless Mice', 'category' => 'Accessories', 'currentStock' => 7, 'minRequired' => 15, 'lastOrder' => '2023-07-01', 'supplier' => 'Tech Supplies Inc.'],
-                                ['id' => 5, 'name' => 'Stapler Pins', 'category' => 'Stationery', 'currentStock' => 8, 'minRequired' => 15, 'lastOrder' => '2023-06-10', 'supplier' => 'Office Solutions'],
-                                ['id' => 6, 'name' => 'USB Flash Drives', 'category' => 'Accessories', 'currentStock' => 9, 'minRequired' => 20, 'lastOrder' => '2023-05-22', 'supplier' => 'Digital Storage Co.'],
-                                ['id' => 7, 'name' => 'Highlighters', 'category' => 'Stationery', 'currentStock' => 14, 'minRequired' => 25, 'lastOrder' => '2023-06-05', 'supplier' => 'Office Solutions'],
-                                ['id' => 8, 'name' => 'HDMI Cables', 'category' => 'Accessories', 'currentStock' => 6, 'minRequired' => 12, 'lastOrder' => '2023-07-03', 'supplier' => 'Tech Supplies Inc.']
-                            ];
-                            
-                            foreach ($lowStockItems as $item): ?>
+                            <?php foreach ($lowStockItems as $item): ?>
                             <tr class="hover:bg-gray-50 transition duration-150">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= $item['name'] ?></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $item['category'] ?></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-danger"><?= $item['currentStock'] ?></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $item['minRequired'] ?></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $item['lastOrder'] ?></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $item['supplier'] ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= htmlspecialchars($item['product_name']) ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($item['category_name']) ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-danger"><?= $item['quantity'] ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $item['minimum_stock'] ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $item['last_updated'] ?></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($item['last_updated_by']) ?></td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <button class="text-primary hover:text-primary-dark font-medium">Order</button>
                                 </td>
@@ -481,14 +551,14 @@ $title = "Procurement Dashboard";
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Recent Orders Table -->
+                <!-- Recent Stock Decrements Table -->
                 <div class="card p-6">
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center">
                             <div class="bg-primary-light p-2 rounded-lg mr-3">
-                                <?= getIconSvg('shopping-cart', 'h-5 w-5 text-primary') ?>
+                                <?= getIconSvg('trending-down', 'h-5 w-5 text-primary') ?>
                             </div>
-                            <h2 class="text-xl font-semibold">Recent Orders</h2>
+                            <h2 class="text-xl font-semibold">Recent Stock Decrements</h2>
                         </div>
                         <a href="#" class="text-sm text-primary font-medium">View All</a>
                     </div>
@@ -497,33 +567,18 @@ $title = "Procurement Dashboard";
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty Adjusted</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated By</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <?php
-                                $recentOrders = [
-                                    ['id' => 1, 'product' => 'HP Printer Paper', 'quantity' => 50, 'date' => '2023-07-14', 'status' => 'Delivered', 'supplier' => 'Paper World'],
-                                    ['id' => 2, 'product' => 'USB-C Cables', 'quantity' => 30, 'date' => '2023-07-12', 'status' => 'In Transit', 'supplier' => 'Tech Supplies Inc.'],
-                                    ['id' => 3, 'product' => 'Wireless Keyboards', 'quantity' => 15, 'date' => '2023-07-10', 'status' => 'Processing', 'supplier' => 'Tech Supplies Inc.'],
-                                    ['id' => 4, 'product' => 'Toner Cartridges', 'quantity' => 10, 'date' => '2023-07-08', 'status' => 'Delivered', 'supplier' => 'Print Solutions']
-                                ];
-                                
-                                foreach ($recentOrders as $order): 
-                                    $statusClass = $order['status'] === 'Delivered' ? 'bg-success-light text-success' : 
-                                                    ($order['status'] === 'In Transit' ? 'bg-primary-light text-primary' : 'bg-warning-light text-warning');
-                                ?>
+                                <?php foreach ($recentDecrements as $decrement): ?>
                                 <tr class="hover:bg-gray-50 transition duration-150">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= $order['product'] ?></td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $order['quantity'] ?></td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $order['date'] ?></td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="badge <?= $statusClass ?>">
-                                            <?= $order['status'] ?>
-                                        </span>
-                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= htmlspecialchars($decrement['product_name']) ?></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $decrement['quantity'] ?></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= date('Y-m-d', strtotime($decrement['created_at'])) ?></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($decrement['user_name']) ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -543,37 +598,25 @@ $title = "Procurement Dashboard";
                         <a href="#" class="text-sm text-primary font-medium">View Details</a>
                     </div>
                     <div class="space-y-4">
+                        <?php foreach ($stockByCategory as $category): 
+                            $percentage = $totalStock > 0 ? round(($category['total_quantity'] / $totalStock) * 100) : 0;
+                        ?>
                         <div>
                             <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-medium text-gray-600">Stationery</span>
-                                <span class="text-sm font-medium text-gray-900">543 items (42%)</span>
+                                <span class="text-sm font-medium text-gray-600"><?= htmlspecialchars($category['category_name']) ?></span>
+                                <span class="text-sm font-medium text-gray-900">
+                                    <?= number_format($category['total_quantity']) ?> items (<?= $percentage ?>%)
+                                </span>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-bar-fill" style="width: 42%"></div>
+                                <div class="progress-bar-fill" style="width: <?= $percentage ?>%"></div>
                             </div>
                         </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-medium text-gray-600">Computers</span>
-                                <span class="text-sm font-medium text-gray-900">328 items (26%)</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-bar-fill" style="width: 26%; background-color: #10b981;"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-medium text-gray-600">Accessories</span>
-                                <span class="text-sm font-medium text-gray-900">413 items (32%)</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-bar-fill" style="width: 32%; background-color: #f59e0b;"></div>
-                            </div>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
                     <div class="mt-6">
                         <button class="btn btn-primary w-full">
-                            View Full Inventory Report
+                            Generate Stock Report
                         </button>
                     </div>
                 </div>
