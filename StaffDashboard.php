@@ -515,6 +515,7 @@ try {
             width: 1rem;
             height: 1rem;
         }
+        
     </style>
 </head>
 <body class="dashboard-container">

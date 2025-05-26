@@ -77,121 +77,352 @@ if ($result && $result->num_rows > 0) {
 
 // Calculate max height for chart (for scaling)
 $maxItems = max(array_column($stockByCategory, 'total_items')) ?: 1;
-?>
-
-<!DOCTYPE html>
+?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($title); ?> - JO TECH</title>
     <style>
-               body, html {
+        :root {
+            --primary: #3b82f6;
+            --primary-light: #93c5fd;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light-gray: #e2e8f0;
+        }
+
+        body, html {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f3f4f6;
-            color: #222;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f1f5f9;
+            color: #334155;
+            line-height: 1.5;
         }
+
         .dashboard-container {
             display: flex;
             min-height: 100vh;
-            background: #f3f4f6;
         }
+
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
+
         .content-area {
             flex: 1;
             overflow-y: auto;
             padding: 1.5rem;
         }
-        .bg-white { background: #fff; }
-        .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .rounded-lg { border-radius: 0.5rem; }
-        .p-4 { padding: 1rem; }
-        .p-6 { padding: 1.5rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .mb-6 { margin-bottom: 1.5rem; }
-        .text-lg { font-size: 1.125rem; }
-        .font-semibold { font-weight: 600; }
-        .font-medium { font-weight: 500; }
-        .text-gray-600 { color: #4b5563; }
-        .text-gray-500 { color: #6b7280; }
-        .text-gray-900 { color: #111827; }
-        .text-2xl { font-size: 1.5rem; }
-        .text-sm { font-size: 0.875rem; }
-        .text-xs { font-size: 0.75rem; }
-        .text-green-500 { color: #22c55e; }
-        .text-green-800 { color: #166534; }
-        .text-blue-500 { color: #3b82f6; }
-        .text-blue-600 { color: #2563eb; }
-        .text-red-500 { color: #ef4444; }
-        .text-red-800 { color: #991b1b; }
-        .text-purple-500 { color: #a21caf; }
-        .bg-blue-500 { background: #3b82f6; }
-        .bg-green-500 { background: #22c55e; }
-        .bg-yellow-500 { background: #eab308; }
-        .bg-purple-500 { background: #a21caf; }
-        .bg-green-100 { background: #dcfce7; }
-        .bg-red-100 { background: #fee2e2; }
-        .rounded-t { border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
-        .rounded-full { border-radius: 9999px; }
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .flex-row { flex-direction: row; }
-        .items-center { align-items: center; }
-        .items-end { align-items: flex-end; }
-        .justify-between { justify-content: space-between; }
-        .justify-around { justify-content: space-around; }
-        .gap-6 { gap: 1.5rem; }
-        .grid { display: grid; }
-        .grid-cols-1 { grid-template-columns: 1fr; }
-        .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .h-60 { height: 15rem; }
-        .h-6 { height: 1.5rem; }
-        .h-5 { height: 1.25rem; }
-        .w-5 { width: 1.25rem; }
-        .w-6 { width: 1.5rem; }
-        .w-16 { width: 4rem; }
-        .ml-2 { margin-left: 0.5rem; }
-        .mt-2 { margin-top: 0.5rem; }
-        .overflow-x-auto { overflow-x: auto; }
-        .overflow-y-auto { overflow-y: auto; }
-        .min-w-full { min-width: 100%; }
-        .divide-y > :not([hidden]) ~ :not([hidden]) { border-top: 1px solid #e5e7eb; }
-        .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb; }
-        .bg-gray-50 { background: #f9fafb; }
-        .whitespace-nowrap { white-space: nowrap; }
-        .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
-        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
-        .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
-        .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-        .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
-        .tracking-wider { letter-spacing: 0.05em; }
-        @media (min-width: 768px) {
-            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        @media (min-width: 1024px) {
-            .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Stats Cards */
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-icon {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8125rem;
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .stat-change.positive {
+            background-color: #ecfdf5;
+            color: #059669;
+        }
+
+        .stat-change.negative {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        .stat-change.neutral {
+            background-color: #f3f4f6;
+            color: #4b5563;
+        }
+
+        /* Tables */
+        .table-container {
+            border-radius: 8px;
+            overflow-x: auto;
+            
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.75rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.875rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.625rem;
+            border-radius: 12px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            letter-spacing: 0.25px;
+        }
+
+        .badge-success {
+            background-color: #ecfdf5;
+            color: #059669;
+        }
+
+        .badge-danger {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 0.875rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            border-left: 3px solid transparent;
+        }
+
+        .alert-success {
+            background-color: #ecfdf5;
+            color: #059669;
+            border-left-color: #059669;
+        }
+
+        .alert-error {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border-left-color: #dc2626;
+        }
+
+        /* Charts */
+        .chart-container {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 1.5rem 0 2.5rem;
+        }
+
         .chart-bar {
-            transition: height 0.5s ease;
+            transition: all 0.3s ease;
+            width: 32px;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            background: linear-gradient(to top, var(--primary), var(--primary-light));
         }
-        .alert-badge {
-            animation: pulse 2s infinite;
+
+        .chart-bar:hover {
+            opacity: 0.9;
         }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+
+        .chart-label {
+            position: absolute;
+            bottom: -1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6875rem;
+            font-weight: 500;
+            white-space: nowrap;
+            color: var(--gray);
         }
+
+        .chart-value {
+            position: absolute;
+            top: -1.25rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        /* Icons */
+        .icon {
+            width: 18px;
+            height: 18px;
+            stroke-width: 1.75;
+        }
+
+        .icon-sm {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-cols-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        @media (max-width: 1024px) {
+            .grid-cols-4 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-cols-2, .grid-cols-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .content-area {
+                padding: 1rem;
+            }
+        }
+
+        /* Utility classes */
+        .mb-1 { margin-bottom: 0.25rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-5 { margin-bottom: 1.25rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+
+        .text-sm { font-size: 0.875rem; }
+        .text-base { font-size: 1rem; }
+        .text-lg { font-size: 1.125rem; }
+
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
+
+        .text-gray-500 { color: var(--gray); }
+        .text-gray-600 { color: #475569; }
+        .text-blue-500 { color: var(--primary); }
+        .text-green-500 { color: var(--success); }
+        .text-red-500 { color: var(--danger); }
+
+
+        .whitespace-nowrap { white-space: nowrap; }
+    @media (min-width: 768px) {
+        .md\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (min-width: 1024px) {
+        .lg\:grid-cols-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .lg\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
     </style>
 </head>
 <body class="dashboard-container">
@@ -201,33 +432,38 @@ $maxItems = max(array_column($stockByCategory, 'total_items')) ?: 1;
         <?php include 'header.php'; ?>
         
         <main class="content-area">
-            <!-- Success/Error Messages -->
+            <!-- Alerts -->
             <?php if (isset($_SESSION['success'])): ?>
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                    <?= $_SESSION['success']; unset($_SESSION['success']); ?>
+                <div class="alert alert-success">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span><?= $_SESSION['success']; unset($_SESSION['success']); ?></span>
                 </div>
             <?php endif; ?>
             
             <?php if (isset($_SESSION['error'])): ?>
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                    <?= $_SESSION['error']; unset($_SESSION['error']); ?>
+                <div class="alert alert-error">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    <span><?= $_SESSION['error']; unset($_SESSION['error']); ?></span>
                 </div>
             <?php endif; ?>
 
-            <div class="grid grid-cols-1 gap-6 mb-6">
-                <div class="bg-white p-4 shadow-sm rounded-lg">
-                    <h2 class="text-lg font-semibold mb-4">
-                        Welcome to JO TECH Stock Management System
-                    </h2>
-                    <p class="text-gray-600">
+            <!-- Welcome Card -->
+            <div class="card mb-6">
+                <div class="card-body">
+                    <h2 class="text-lg font-semibold mb-2">Welcome to JO TECH Stock Management System</h2>
+                    <p class="text-sm text-gray-600">
                         As an administrator, you have full access to manage users, track
                         inventory, categorize products, and generate reports.
                     </p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <!-- Stats Cards -->
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <?php
                 $statCards = [
                     [
@@ -235,7 +471,7 @@ $maxItems = max(array_column($stockByCategory, 'total_items')) ?: 1;
                         'value' => number_format($stats['total_products']),
                         'icon' => 'box',
                         'color' => 'blue',
-                        'change' => '+5%', // This would come from a comparison query in a real app
+                        'change' => '+5%',
                         'changeType' => 'increase'
                     ],
                     [
@@ -251,7 +487,7 @@ $maxItems = max(array_column($stockByCategory, 'total_items')) ?: 1;
                         'value' => number_format($stats['total_users']),
                         'icon' => 'users',
                         'color' => 'green',
-                        'change' => '0', // This would come from a comparison query in a real app
+                        'change' => '0',
                         'changeType' => 'neutral'
                     ],
                     [
@@ -259,67 +495,83 @@ $maxItems = max(array_column($stockByCategory, 'total_items')) ?: 1;
                         'value' => number_format($stats['total_categories']),
                         'icon' => 'clipboard-list',
                         'color' => 'purple',
-                        'change' => '+1', // This would come from a comparison query in a real app
+                        'change' => '+1',
                         'changeType' => 'increase'
                     ]
                 ];
 
                 foreach ($statCards as $stat): 
-                    $colorClass = "text-{$stat['color']}-600";
-                    $changeClass = $stat['changeType'] === 'increase' ? 'text-green-500' : 
-                                  ($stat['changeType'] === 'decrease' ? 'text-red-500' : 'text-gray-500');
+                    $changeClass = $stat['changeType'] === 'increase' ? 'positive' : 
+                                  ($stat['changeType'] === 'decrease' ? 'negative' : 'neutral');
                 ?>
-                <div class="bg-white p-6 rounded-lg shadow-sm">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-medium text-gray-500"><?= $stat['title'] ?></h3>
-                        <?= getIconSvg($stat['icon'], "h-6 w-6 $colorClass") ?>
+                <div class="card stat-card">
+                    <div class="stat-icon text-<?= $stat['color'] ?>-500">
+                        <?= getIconSvg($stat['icon'], "w-8 h-8") ?>
                     </div>
-                    <div class="flex items-end">
-                        <p class="text-2xl font-semibold"><?= $stat['value'] ?></p>
-                        <span class="ml-2 text-sm flex items-center <?= $changeClass ?>">
-                            <?= $stat['change'] ?>
-                        </span>
+                    <div class="card-body stat-content">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="stat-label"><?= $stat['title'] ?></span>
+                            <?= getIconSvg($stat['icon'], "icon text-{$stat['color']}-500") ?>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <span class="stat-number"><?= $stat['value'] ?></span>
+                            <span class="stat-change <?= $changeClass ?>">
+                                <?php if ($stat['changeType'] === 'increase'): ?>
+                                    <svg class="icon-sm mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                    </svg>
+                                <?php elseif ($stat['changeType'] === 'decrease'): ?>
+                                    <svg class="icon-sm mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                <?php endif; ?>
+                                <?= $stat['change'] ?>
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <?php endforeach; ?>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                 <!-- Low Stock Alerts -->
-                <div class="bg-white p-6 rounded-lg shadow-sm">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold">Low Stock Alerts</h2>
-                        <?php if (count($lowStockItems) > 0): ?>
-                            <span class="alert-badge bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                                <?= count($lowStockItems) ?> Alert<?= count($lowStockItems) > 1 ? 's' : '' ?>
-                            </span>
-                        <?php else: ?>
-                            <?= getIconSvg('check-circle', 'h-5 w-5 text-green-500') ?>
-                        <?php endif; ?>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="flex items-center justify-between">
+                            <h2 class="card-title">Low Stock Alerts</h2>
+                            <?php if (count($lowStockItems) > 0): ?>
+                                <span class="badge badge-danger">
+                                    <?= count($lowStockItems) ?> Alert<?= count($lowStockItems) > 1 ? 's' : '' ?>
+                                </span>
+                            <?php else: ?>
+                                <?= getIconSvg('check-circle', 'icon text-green-500') ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                    <div class="table-container">
+                        <table class="overflow-x-auto">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Required</th>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Current</th>
+                                    <th>Min Required</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 <?php if (count($lowStockItems) > 0): ?>
                                     <?php foreach ($lowStockItems as $item): ?>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= htmlspecialchars($item['product_name']) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($item['category_name']) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500 font-medium"><?= $item['quantity'] ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $item['minimum_stock'] ?></td>
+                                        <td class="font-semibold"><?= htmlspecialchars($item['product_name']) ?></td>
+                                        <td><?= htmlspecialchars($item['category_name']) ?></td>
+                                        <td class="text-red-500 font-medium"><?= $item['quantity'] ?></td>
+                                        <td><?= $item['minimum_stock'] ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No low stock items found</td>
+                                        <td colspan="4" class="text-center text-gray-500 py-4">No low stock items found</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -328,43 +580,45 @@ $maxItems = max(array_column($stockByCategory, 'total_items')) ?: 1;
                 </div>
 
                 <!-- Recent Stock Movements -->
-                <div class="bg-white p-6 rounded-lg shadow-sm">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold">Recent Stock Movements</h2>
-                        <?= getIconSvg('package', 'h-5 w-5 text-blue-500') ?>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="flex items-center justify-between">
+                            <h2 class="card-title">Recent Stock Movements</h2>
+                            <?= getIconSvg('package', 'icon text-blue-500') ?>
+                        </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                    <div class="table-container">
+                        <table class="overflow-x-auto">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                    <th>Product</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Date</th>
+                                    <th>User</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 <?php if (count($recentMovements) > 0): ?>
                                     <?php foreach ($recentMovements as $movement): 
-                                        $typeClass = $movement['update_type'] === 'increment' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                                        $typeClass = $movement['update_type'] === 'increment' ? 'badge-success' : 'badge-danger';
                                         $typeText = $movement['update_type'] === 'increment' ? 'Received' : 'Dispatched';
                                     ?>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= htmlspecialchars($movement['product_name']) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $typeClass ?>">
+                                        <td class="font-semibold"><?= htmlspecialchars($movement['product_name']) ?></td>
+                                        <td>
+                                            <span class="badge <?= $typeClass ?>">
                                                 <?= $typeText ?>
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $movement['quantity'] ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= date('Y-m-d', strtotime($movement['created_at'])) ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($movement['user_name']) ?></td>
+                                        <td><?= $movement['quantity'] ?></td>
+                                        <td><?= date('Y-m-d', strtotime($movement['created_at'])) ?></td>
+                                        <td><?= htmlspecialchars($movement['user_name']) ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No recent stock movements found</td>
+                                        <td colspan="5" class="text-center text-gray-500 py-4">No recent stock movements found</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -373,41 +627,44 @@ $maxItems = max(array_column($stockByCategory, 'total_items')) ?: 1;
                 </div>
             </div>
 
-            <!-- Stock by Category -->
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold">Stock by Category</h2>
-                    <?= getIconSvg('bar-chart-2', 'h-5 w-5 text-green-500') ?>
+            <!-- Stock by Category Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Stock by Category</h2>
+                    <?= getIconSvg('bar-chart-2', 'icon text-green-500') ?>
                 </div>
-                <div class="h-60 flex items-end justify-around">
-                    <?php if (count($stockByCategory) > 0): ?>
-                        <?php 
-                        $colors = ['blue', 'green', 'yellow', 'purple', 'indigo', 'pink', 'red'];
-                        $colorIndex = 0;
-                        ?>
-                        <?php foreach ($stockByCategory as $category): 
-                            $height = ($category['total_items'] / $maxItems) * 180; // Scale to max 180px
-                            $color = $colors[$colorIndex % count($colors)];
-                            $colorIndex++;
-                        ?>
-                        <div class="flex flex-col items-center">
-                            <div class="bg-<?= $color ?>-500 w-16 rounded-t chart-bar" style="height: <?= $height ?>px"></div>
-                            <p class="mt-2 text-sm font-medium"><?= htmlspecialchars($category['category_name']) ?></p>
-                            <p class="text-xs text-gray-500"><?= number_format($category['total_items']) ?> items</p>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <div class="w-full text-center text-gray-500">
-                            No category data available
-                        </div>
-                    <?php endif; ?>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <?php if (count($stockByCategory) > 0): ?>
+                            <?php 
+                            $colors = ['blue', 'green', 'yellow', 'purple', 'indigo', 'pink', 'red'];
+                            $colorIndex = 0;
+                            $maxHeight = 150;
+                            ?>
+                            <?php foreach ($stockByCategory as $category): 
+                                $height = ($category['total_items'] / $maxItems) * $maxHeight;
+                                $color = $colors[$colorIndex % count($colors)];
+                                $colorIndex++;
+                            ?>
+                            <div class="flex flex-col items-center">
+                                <div class="chart-bar" style="height: <?= $height ?>px">
+                                    <span class="chart-value"><?= number_format($category['total_items']) ?></span>
+                                </div>
+                                <span class="chart-label"><?= htmlspecialchars($category['category_name']) ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="w-full text-center text-gray-500">
+                                No category data available
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 </body>
 </html>
-
 <script>
 // Simple animation for chart bars when page loads
 document.addEventListener('DOMContentLoaded', function() {
