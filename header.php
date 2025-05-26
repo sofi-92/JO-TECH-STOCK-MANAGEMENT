@@ -40,6 +40,7 @@ $username = $_SESSION['user']['username'] ?? 'User';
         .items-center { align-items: center; }
         .gap-1 { gap: .25rem; }
         .gap-2 { gap: .5rem; }
+      
     </style>
 </head>
 <body>
