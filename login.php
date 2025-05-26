@@ -6,7 +6,7 @@ $error = '';
 
 // Redirect logged-in users away from login page
 if (isset($_SESSION['user_id'])) {
-    switch ($_SESSION['user_role']) {
+    switch ($_SESSION['role']) {
         case 'admin':
             header("Location: AdminDashboard.php");
             break;
