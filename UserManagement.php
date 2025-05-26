@@ -111,142 +111,492 @@ $roles = ['admin', 'manager', 'staff', 'sales', 'procurement'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?> - JO TECH</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-light: #93c5fd;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light-gray: #e2e8f0;
+        }
+     body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f1f5f9;
+            color: #334155;
+            line-height: 1.5;
+        }
+      .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            
+        }
+        .mt-3{
+            margin-top: 1rem;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.25rem;
+        }
+
+   
+
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.75rem 1.25rem;
+            text-align: left;
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.875rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-admin {
+            background-color: #f3e8ff;
+            color: #9333ea;
+        }
+
+        .badge-manager {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .badge-staff {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-sales {
+            background-color: #fef9c3;
+            color: #854d0e;
+        }
+
+        .badge-procurement {
+            background-color: #ffedd5;
+            color: #9a3412;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-outline {
+            border: 1px solid #e2e8f0;
+            background-color: white;
+        }
+
+        .btn-outline:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 0.875rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-left: 3px solid transparent;
+        }
+
+        .alert-success {
+            background-color: #ecfdf5;
+            color: #059669;
+            border-left-color: #059669;
+        }
+
+        .alert-error {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border-left-color: #dc2626;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #334155;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 0.5rem;
+            width: 100%;
+            max-width: 28rem;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+
+        /* Icons */
+        .icon {
+            width: 1rem;
+            height: 1rem;
+            stroke-width: 2;
+        }
+
+        /* Utility classes */
+        .flex {
+            display: flex;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .gap-2 {
+            gap: 0.5rem;
+        }
+
+        .gap-3 {
+            gap: 0.75rem;
+        }
+
+        .gap-4 {
+            gap: 1rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+
+        .mr-4 {
+            margin-right: 1rem;
+        }
+
+        .text-xl {
+            font-size: 1.25rem;
+        }
+
+        .text-2xl {
+            font-size: 1.5rem;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .text-gray-600 {
+            color: #4b5563;
+        }
+
+        .text-blue-600 {
+            color: #2563eb;
+        }
+
+        .text-red-600 {
+            color: #dc2626;
+        }
+
+        .hover\:text-blue-900:hover {
+            color: #1e40af;
+        }
+
+        .hover\:text-red-900:hover {
+            color: #991b1b;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8125rem;
+            }
+            
+            .card-header, .card-body {
+                padding: 1rem;
+            }
+            
+            td, th {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
+<body class="dashboard-container">
     <?php include 'sidebar.php'; ?>
     
-    <div class="ml-64 p-8">
+    <div class="main-content">
         <?php include 'header.php'; ?>
+             <main class="content-area">
 
         <!-- Messages -->
         <?php if ($success): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                <?= $success ?>
+            <div class="alert alert-success">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span><?= $success ?></span>
             </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <?= $error ?>
+            <div class="alert alert-error">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span><?= $error ?></span>
             </div>
         <?php endif; ?>
 
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-semibold">User Management</h2>
-                <a href="?modal=add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="card mb-6">
+            <div class="card-header flex justify-between items-center">
+                <h2 class="text-xl font-semibold">User Management</h2>
+                <a href="?modal=add" class="btn btn-primary">
+                    <svg class="icon mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
                     Add User
                 </a>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created At</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <?php foreach ($users as $user): ?>
+            <div class="card-body p-0">
+                <div class="table-container">
+                    <table>
+                        <thead>
                             <tr>
-                                <td class="px-6 py-4"><?= htmlspecialchars($user['user_name']) ?></td>
-                                <td class="px-6 py-4"><?= htmlspecialchars($user['email']) ?></td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2 py-1 rounded-full text-xs <?= match($user['role']) {
-                                        'admin' => 'bg-purple-100 text-purple-800',
-                                        'manager' => 'bg-blue-100 text-blue-800',
-                                        'staff' => 'bg-green-100 text-green-800',
-                                        'sales' => 'bg-yellow-100 text-yellow-800',
-                                        'procurement' => 'bg-orange-100 text-orange-800'
-                                    } ?>">
-                                        <?= ucfirst($user['role']) ?>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4"><?= date('M j, Y', strtotime($user['created_at'])) ?></td>
-                                <td class="px-6 py-4">
-                                    <a href="?edit=<?= $user['user_id'] ?>" class="text-blue-600 hover:text-blue-900 mr-4">
-                                        Edit
-                                    </a>
-                                    <a href="?delete=<?= $user['user_id'] ?>" class="text-red-600 hover:text-red-900" 
-                                       onclick="return confirm('Are you sure you want to delete this user?')">
-                                        Delete
-                                    </a>
-                                </td>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Created At</th>
+                                <th>Actions</th>
                             </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($users as $user): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($user['user_name']) ?></td>
+                                    <td><?= htmlspecialchars($user['email']) ?></td>
+                                    <td>
+                                        <span class="badge badge-<?= $user['role'] ?>">
+                                            <?= ucfirst($user['role']) ?>
+                                        </span>
+                                    </td>
+                                    <td><?= date('M j, Y', strtotime($user['created_at'])) ?></td>
+                                    <td>
+                                        <div class="flex items-center">
+                                            <a href="?edit=<?= $user['user_id'] ?>" class="text-blue-600 hover:text-blue-900 mr-4">
+                                                Edit
+                                            </a>
+                                            <a href="?delete=<?= $user['user_id'] ?>" class="text-red-600 hover:text-red-900" 
+                                               onclick="return confirm('Are you sure you want to delete this user?')">
+                                                Delete
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
         <!-- Modal -->
         <?php if (isset($_GET['edit']) || isset($_GET['modal'])): ?>
-            <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                    <h3 class="text-xl font-semibold mb-4">
-                        <?= isset($_GET['edit']) ? 'Edit User' : 'Add New User' ?>
-                    </h3>
-                    
-                    <form method="POST">
-                        <?php if (isset($_GET['edit'])): ?>
-                            <input type="hidden" name="id" value="<?= $editingUser['user_id'] ?>">
-                        <?php endif; ?>
+            <div class="modal-overlay">
+                <div class="modal-content">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-4">
+                            <?= isset($_GET['edit']) ? 'Edit User' : 'Add New User' ?>
+                        </h3>
                         
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Full Name</label>
-                                <input type="text" name="name" value="<?= $editingUser['user_name'] ?? '' ?>" 
-                                       class="w-full p-2 border rounded" required>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Email</label>
-                                <input type="email" name="email" value="<?= $editingUser['email'] ?? '' ?>" 
-                                       class="w-full p-2 border rounded" required>
-                            </div>
-                            
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Role</label>
-                                <select name="role" class="w-full p-2 border rounded" required>
-                                    <?php foreach ($roles as $role): ?>
-                                        <option value="<?= $role ?>" <?= ($editingUser['role'] ?? '') === $role ? 'selected' : '' ?>>
-                                            <?= ucfirst($role) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            
-                            <?php if (!isset($_GET['edit'])): ?>
-                                <div>
-                                    <label class="block text-sm font-medium mb-1">Password</label>
-                                    <input type="password" name="password" 
-                                           class="w-full p-2 border rounded" required>
-                                </div>
+                        <form method="POST">
+                            <?php if (isset($_GET['edit'])): ?>
+                                <input type="hidden" name="id" value="<?= $editingUser['user_id'] ?>">
                             <?php endif; ?>
                             
-                            <div class="flex justify-end space-x-3 mt-6">
-                                <button type="button" onclick="window.location.href='usermanagement.php'" 
-                                        class="px-4 py-2 border rounded hover:bg-gray-50">
-                                    Cancel
-                                </button>
-                                <button type="submit" name="<?= isset($_GET['edit']) ? 'updateUser' : 'addUser' ?>" 
-                                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                    <?= isset($_GET['edit']) ? 'Save Changes' : 'Add User' ?>
-                                </button>
+                            <div class="space-y-4">
+                                <div class="form-group">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" name="name" value="<?= $editingUser['user_name'] ?? '' ?>" 
+                                           class="form-control" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" name="email" value="<?= $editingUser['email'] ?? '' ?>" 
+                                           class="form-control" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Role</label>
+                                    <select name="role" class="form-control" required>
+                                        <?php foreach ($roles as $role): ?>
+                                            <option value="<?= $role ?>" <?= ($editingUser['role'] ?? '') === $role ? 'selected' : '' ?>>
+                                                <?= ucfirst($role) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                
+                                <?php if (!isset($_GET['edit'])): ?>
+                                    <div class="form-group">
+                                        <label class="form-label">Password</label>
+                                        <input type="password" name="password" 
+                                               class="form-control" required>
+                                    </div>
+                                <?php endif; ?>
+                                
+                                <div class="flex justify-end gap-3 pt-4">
+                                    <button type="button" onclick="window.location.href='usermanagement.php'" 
+                                            class="btn btn-outline">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" name="<?= isset($_GET['edit']) ? 'updateUser' : 'addUser' ?>" 
+                                            class="btn btn-primary">
+                                        <?= isset($_GET['edit']) ? 'Save Changes' : 'Add User' ?>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         <?php endif; ?>
+        </main>
     </div>
 </body>
 </html>

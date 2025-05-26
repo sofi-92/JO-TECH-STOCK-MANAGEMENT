@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once 'config.php';
-require_once 'sidebar.php';
+/* require_once 'sidebar.php'; */
 $title = "Sales Dashboard";
 
 // Fetch categories from database
@@ -80,174 +80,544 @@ $outOfStockPercent = $totalProducts > 0 ? round(($outOfStockCount / $totalProduc
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($title) ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title><?= htmlspecialchars($title) ?> - JO TECH</title>
     <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-light: #93c5fd;
+            --primary-dark: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --gray: #64748b;
+            --light-gray: #e2e8f0;
+        }
+
         body {
-            background-color: #f9fafb; /* Light gray background */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f1f5f9;
+            color: #334155;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        /* Dashboard Layout */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        /* Tables */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        .table th {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+
+        .table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.875rem;
+        }
+
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background-color: #ecfdf5;
+            color: #059669;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Forms */
+        .form-control {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .w-fit{width: fit-content;}
+
+        /* Progress bars */
+        .progress-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 0.25rem;
+            height: 0.5rem;
+            margin-top: 0.25rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 0.25rem;
+            background-color: var(--primary);
+        }
+
+        /* Stats */
+        .stat-circle {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1rem;
+            margin: 0 auto;
+        }
+
+        /* Quick Actions */
+        .quick-action {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+            width: 100%;
+            background: white;
+            margin-bottom: 0.75rem;
+        }
+
+        .quick-action:hover {
+            background-color: #f8fafc;
+            border-color: var(--primary-light);
+        }
+
+        /* Icons */
+        .icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            stroke-width: 2;
+        }
+
+        .icon-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        /* Utility classes */
+        .flex {
+            display: flex;
+        }
+
+        .flex-col {
+            flex-direction: column;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .gap-2 {
+            gap: 0.5rem;
+        }
+
+        .gap-3 {
+            gap: 0.75rem;
+        }
+
+        .gap-4 {
+            gap: 1rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .mb-3 {
+            margin-bottom: 0.75rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem;
+        }
+
+        .p-3 {
+            padding: 0.75rem;
+        }
+
+        .p-4 {
+            padding: 1rem;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .text-base {
+            font-size: 1rem;
+        }
+
+        .text-lg {
+            font-size: 1.125rem;
+        }
+
+        .font-medium {
+            font-weight: 500;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .text-gray-500 {
+            color: var(--gray);
+        }
+
+        .text-gray-600 {
+            color: #475569;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .whitespace-nowrap {
+            white-space: nowrap;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .content-area {
+                padding: 0.75rem;
+            }
+
+            .card-header, .card-body {
+                padding: 0.75rem;
+            }
+
+            .table th, .table td {
+                padding: 0.75rem;
+            }
+
+            .grid-cols-2, .grid-cols-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-circle {
+                width: 3rem;
+                height: 3rem;
+                font-size: 0.875rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .flex-col-xs {
+                flex-direction: column;
+            }
+            
+            .gap-xs-2 {
+                gap: 0.5rem;
+            }
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+        .pl-10{
+            padding-left: 2.5rem;
         }
     </style>
 </head>
-<body>
-
-<div class="container mx-auto p-6">
-    <div class="grid grid-cols-1 gap-6 mb-6">
-        <div class="bg-white p-4 shadow-sm rounded-lg">
-            <h2 class="text-lg font-semibold mb-4">Welcome to the Sales Dashboard</h2>
-            <p class="text-gray-600">
-                As a sales team member, you can view current stock levels to inform customers about product availability.
-            </p>
-        </div>
-    </div>
-
-    <div class="bg-white p-6 rounded-lg shadow-sm mb-6">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-            <h2 class="text-lg font-semibold mb-4 md:mb-0">Product Inventory</h2>
-            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <?= getIconSvg('search', 'h-4 w-4 text-gray-400') ?>
-                    </div>
-                    <input type="text" id="productSearch" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search products...">
+<body class="dashboard-container">
+    <?php include 'sidebar.php'; ?>
+    
+    <div class="main-content">
+        <?php include 'header.php'; ?>
+        
+        <main class="content-area">
+            <!-- Welcome Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="text-lg font-semibold">Welcome to the Sales Dashboard</h2>
+                    <p class="text-gray-600 text-sm">As a sales team member, you can view current stock levels to inform customers about product availability.</p>
                 </div>
-                <div class="relative inline-block text-left">
-                    <select id="categoryFilter" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                        <option value="">All Categories</option>
-                        <?php foreach ($categories as $category): ?>
-                        <option value="<?= htmlspecialchars($category['category_name']) ?>">
-                            <?= htmlspecialchars($category['category_name']) ?>
-                        </option>
+            </div>
+
+            <!-- Product Inventory Card -->
+            <div class="card">
+                <div class="card-header flex flex-col xs:flex-row justify-between items-start gap-xs-2">
+                    <h3 class="text-lg font-semibold">Product Inventory</h3>
+                    <div class="flex flex-row gap-2 w-full xs:w-auto">
+                        <div class="relative w-full">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="search-icon icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <input type="text" id="productSearch" class="form-control pl-10" placeholder="Search products...">
+                        </div>
+                        <select id="categoryFilter" class="form-control w-fit">
+                            <option value="">All Categories</option>
+                            <?php foreach ($categories as $category): ?>
+                            <option value="<?= htmlspecialchars($category['category_name']) ?>">
+                                <?= htmlspecialchars($category['category_name']) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Stock Level</th>
+                                    <th>Minimum Stock</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productTable">
+                                <?php foreach ($products as $product): 
+                                    $statusClass = $product['quantity'] == 0 ? 'badge-danger' :
+                                                  ($product['quantity'] <= $product['minimum_stock'] ? 'badge-warning' : 'badge-success');
+                                    $statusText = $product['quantity'] == 0 ? 'Out of Stock' :
+                                                 ($product['quantity'] <= $product['minimum_stock'] ? 'Low Stock' : 'In Stock');
+                                ?>
+                                <tr class="product-row">
+                                    <td><?= htmlspecialchars($product['product_name']) ?></td>
+                                    <td><?= htmlspecialchars($product['category_name']) ?></td>
+                                    <td><?= $product['quantity'] ?></td>
+                                    <td><?= $product['minimum_stock'] ?></td>
+                                    <td>
+                                        <span class="badge <?= $statusClass ?>">
+                                            <?= $statusText ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-header">
+                    <p class="text-sm text-gray-500">
+                        Showing <span class="font-semibold">1</span> to <span class="font-semibold"><?= count($products) ?></span> of <span class="font-semibold"><?= $totalProducts ?></span> results
+                    </p>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Popular Categories -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="text-lg font-semibold">Popular Categories</h3>
+                    </div>
+                    <div class="card-body space-y-3">
+                        <?php foreach ($categoryDistribution as $category): 
+                            $percentage = $totalProducts > 0 ? round(($category['product_count'] / $totalProducts) * 100) : 0;
+                        ?>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span><?= htmlspecialchars($category['category_name']) ?></span>
+                                <span class="font-semibold"><?= $percentage ?>%</span>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: <?= $percentage ?>%"></div>
+                            </div>
+                        </div>
                         <?php endforeach; ?>
-                    </select>
+                    </div>
+                </div>
+
+                <!-- Stock Availability -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="text-lg font-semibold">Stock Availability</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="text-center">
+                                <div class="stat-circle bg-green-100 text-green-800">
+                                    <?= $inStockPercent ?>%
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">In Stock</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="stat-circle bg-yellow-100 text-yellow-800">
+                                    <?= $lowStockPercent ?>%
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">Low Stock</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="stat-circle bg-red-100 text-red-800">
+                                    <?= $outOfStockPercent ?>%
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500">Out of Stock</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="text-lg font-semibold">Quick Actions</h3>
+                    </div>
+                    <div class="card-body">
+                        <button class="quick-action">
+                            <span>Check product availability</span>
+                            <svg class="icon icon-sm text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </button>
+                        <button class="quick-action">
+                            <span>Filter by category</span>
+                            <svg class="icon icon-sm text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                            </svg>
+                        </button>
+                        <button class="quick-action">
+                            <span>Contact warehouse</span>
+                            <svg class="icon icon-sm text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock Level</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minimum Stock</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200" id="productTable">
-                    <?php foreach ($products as $product): 
-                        $statusClass = $product['quantity'] == 0 ? 'bg-red-100 text-red-800' :
-                                      ($product['quantity'] <= $product['minimum_stock'] ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800');
-                        $statusText = $product['quantity'] == 0 ? 'Out of Stock' :
-                                     ($product['quantity'] <= $product['minimum_stock'] ? 'Low Stock' : 'In Stock');
-                    ?>
-                    <tr class="product-row">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= htmlspecialchars($product['product_name']) ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($product['category_name']) ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $product['quantity'] ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= $product['minimum_stock'] ?></td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusClass ?>">
-                                <?= $statusText ?>
-                            </span>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-        <div class="flex items-center justify-between mt-6">
-            <div class="text-sm text-gray-500">
-                Showing <span class="font-medium">1</span> to <span class="font-medium"><?= count($products) ?></span> of <span class="font-medium"><?= $totalProducts ?></span> results
-            </div>
-        </div>
+        </main>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-lg shadow-sm">
-            <h3 class="font-semibold text-gray-800 mb-4">Popular Categories</h3>
-            <div class="space-y-4">
-                <?php foreach ($categoryDistribution as $category): 
-                    $percentage = $totalProducts > 0 ? round(($category['product_count'] / $totalProducts) * 100) : 0;
-                ?>
-                <div class="flex items-center justify-between">
-                    <span class="text-gray-600"><?= htmlspecialchars($category['category_name']) ?></span>
-                    <div class="w-2/3 bg-gray-200 rounded-full h-2">
-                        <div class="bg-blue-500 h-2 rounded-full" style="width: <?= $percentage ?>%"></div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
+    <script>
+    // Product search and filter functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('productSearch');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const productRows = document.querySelectorAll('.product-row');
 
-        <div class="bg-white p-6 rounded-lg shadow-sm">
-            <h3 class="font-semibold text-gray-800 mb-4">Stock Availability</h3>
-            <div class="flex items-center justify-around">
-                <div class="text-center">
-                    <div class="inline-flex items-center justify-center p-4 bg-green-100 rounded-full">
-                        <span class="text-xl font-bold text-green-800"><?= $inStockPercent ?>%</span>
-                    </div>
-                    <p class="mt-2 text-sm text-gray-500">In Stock</p>
-                </div>
-                <div class="text-center">
-                    <div class="inline-flex items-center justify-center p-4 bg-yellow-100 rounded-full">
-                        <span class="text-xl font-bold text-yellow-800"><?= $lowStockPercent ?>%</span>
-                    </div>
-                    <p class="mt-2 text-sm text-gray-500">Low Stock</p>
-                </div>
-                <div class="text-center">
-                    <div class="inline-flex items-center justify-center p-4 bg-red-100 rounded-full">
-                        <span class="text-xl font-bold text-red-800"><?= $outOfStockPercent ?>%</span>
-                    </div>
-                    <p class="mt-2 text-sm text-gray-500">Out of Stock</p>
-                </div>
-            </div>
-        </div>
+        function filterProducts() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedCategory = categoryFilter.value.toLowerCase();
 
-        <div class="bg-white p-6 rounded-lg shadow-sm">
-            <h3 class="font-semibold text-gray-800 mb-4">Quick Actions</h3>
-            <div class="space-y-4">
-                <button class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    <span>Check product availability</span>
-                    <?= getIconSvg('search', 'h-4 w-4') ?>
-                </button>
-                <button class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    <span>Filter by category</span>
-                    <?= getIconSvg('filter', 'h-4 w-4') ?>
-                </button>
-                <button class="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                    <span>Contact warehouse</span>
-                    <?= getIconSvg('box', 'h-4 w-4') ?>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+            productRows.forEach(row => {
+                const productName = row.cells[0].textContent.toLowerCase();
+                const category = row.cells[1].textContent.toLowerCase();
+                const matchesSearch = productName.includes(searchTerm);
+                const matchesCategory = selectedCategory === '' || category === selectedCategory;
 
-<script>
-// Product search and filter functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('productSearch');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const productRows = document.querySelectorAll('.product-row');
+                row.style.display = (matchesSearch && matchesCategory) ? '' : 'none';
+            });
+        }
 
-    function filterProducts() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const selectedCategory = categoryFilter.value.toLowerCase();
+        searchInput.addEventListener('input', filterProducts);
+        categoryFilter.addEventListener('change', filterProducts);
+    });
+    </script>
+</body>
+</html>
 
-        productRows.forEach(row => {
-            const productName = row.cells[0].textContent.toLowerCase();
-            const category = row.cells[1].textContent.toLowerCase();
-            const matchesSearch = productName.includes(searchTerm);
-            const matchesCategory = selectedCategory === '' || category === selectedCategory;
-
-            row.style.display = (matchesSearch && matchesCategory) ? '' : 'none';
-        });
-    }
-
-    searchInput.addEventListener('input', filterProducts);
-    categoryFilter.addEventListener('change', filterProducts);
-});
-</script>
 
 <?php
 function getIconSvg($iconName, $classes = '') {
@@ -260,5 +630,3 @@ function getIconSvg($iconName, $classes = '') {
     return $icons[$iconName] ?? '';
 }
 ?>
-</body>
-</html>
