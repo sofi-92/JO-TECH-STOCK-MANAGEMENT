@@ -233,7 +233,7 @@ $roles = ['admin', 'manager', 'staff', 'sales', 'procurement'];
                             <?php endif; ?>
                             
                             <div class="flex justify-end space-x-3 mt-6">
-                                <button type="button" onclick="window.location.href='user-management.php'" 
+                                <button type="button" onclick="window.location.href='usermanagement.php'" 
                                         class="px-4 py-2 border rounded hover:bg-gray-50">
                                     Cancel
                                 </button>
