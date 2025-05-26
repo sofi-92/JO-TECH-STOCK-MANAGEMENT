@@ -18,31 +18,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Add new category
         $name = trim($_POST['category_name']);
         
-   try {
-    $currentTimestamp = date('Y-m-d H:i:s'); // Get current timestamp
-    $stmt = $pdo->prepare("INSERT INTO categories (category_name, created_at) VALUES (?, ?)");
-    $stmt->execute([$name, $currentTimestamp]);
-    $_SESSION['message'] = "Category added successfully!";
-    $_SESSION['message_type'] = "success";
-    header("Location: ProductCategories.php");
-    exit;
-} catch (PDOException $e) {
-    $_SESSION['message'] = "Error adding category: " . $e->getMessage();
-    $_SESSION['message_type'] = "error";
-}
+        try {
+            $currentTimestamp = date('Y-m-d H:i:s'); // Get current timestamp
+            $stmt = $conn->prepare("INSERT INTO categories (category_name, created_at) VALUES (?, ?)");
+            $stmt->bind_param("ss", $name, $currentTimestamp);
+            $stmt->execute();
+            $_SESSION['message'] = "Category added successfully!";
+            $_SESSION['message_type'] = "success";
+            header("Location: ProductCategories.php");
+            exit;
+        } catch (mysqli_sql_exception $e) {
+            $_SESSION['message'] = "Error adding category: " . $e->getMessage();
+            $_SESSION['message_type'] = "error";
+        }
     } elseif (isset($_POST['edit_category'])) {
         // Update existing category
         $id = $_POST['category_id'];
         $name = trim($_POST['category_name']);
         
         try {
-            $stmt = $pdo->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
-            $stmt->execute([$name, $id]);
+            $stmt = $conn->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
+            $stmt->bind_param("si", $name, $id);
+            $stmt->execute();
             $_SESSION['message'] = "Category updated successfully!";
             $_SESSION['message_type'] = "success";
             header("Location: ProductCategories.php");
             exit;
-        } catch (PDOException $e) {
+        } catch (mysqli_sql_exception $e) {
             $_SESSION['message'] = "Error updating category: " . $e->getMessage();
             $_SESSION['message_type'] = "error";
         }
@@ -52,22 +54,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         try {
             // First check if category has products
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM products WHERE category_id = ?");
-            $stmt->execute([$id]);
-            $productCount = $stmt->fetchColumn();
+            $stmt = $conn->prepare("SELECT COUNT(*) FROM products WHERE category_id = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $stmt->bind_result($productCount);
+            $stmt->fetch();
             
             if ($productCount > 0) {
                 $_SESSION['message'] = "Cannot delete category with products. Please reassign or delete products first.";
                 $_SESSION['message_type'] = "error";
             } else {
-                $stmt = $pdo->prepare("DELETE FROM categories WHERE category_id = ?");
-                $stmt->execute([$id]);
+                $stmt = $conn->prepare("DELETE FROM categories WHERE category_id = ?");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
                 $_SESSION['message'] = "Category deleted successfully!";
                 $_SESSION['message_type'] = "success";
             }
             header("Location: ProductCategories.php");
             exit;
-        } catch (PDOException $e) {
+        } catch (mysqli_sql_exception $e) {
             $_SESSION['message'] = "Error deleting category: " . $e->getMessage();
             $_SESSION['message_type'] = "error";
         }
@@ -76,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch all categories with product counts
 try {
-    $stmt = $pdo->query("
+    $stmt = $conn->prepare("
         SELECT c.category_id, c.category_name, c.created_at, 
                COUNT(p.product_id) as product_count
         FROM categories c
@@ -84,8 +89,10 @@ try {
         GROUP BY c.category_id
         ORDER BY c.category_name
     ");
-    $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $categories = $result->fetch_all(MYSQLI_ASSOC);
+} catch (mysqli_sql_exception $e) {
     $categories = [];
     $_SESSION['message'] = "Error fetching categories: " . $e->getMessage();
     $_SESSION['message_type'] = "error";
