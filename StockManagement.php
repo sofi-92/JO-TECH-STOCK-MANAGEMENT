@@ -15,7 +15,7 @@ $user_id = $_SESSION['user_id'];
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['add_product'])) {
+    if ($_POST['action'] === 'add_product') {
         // Add new product
         $name = $conn->real_escape_string($_POST['product_name']);
         $category_id = (int)$_POST['category_id'];
@@ -23,18 +23,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $min_required = (int)$_POST['min_required'];
         $price = floatval($_POST['price']);
         
+        // Prepare the SQL statement
         $sql = "INSERT INTO products (product_name, category_id, quantity, minimum_stock, price, created_at) 
                 VALUES ('$name', $category_id, $quantity, $min_required, $price, NOW())";
-        
+
+        // Debugging: Print the SQL query
+        error_log("SQL Query: $sql");
+
+        // Execute the query
         if ($conn->query($sql)) {
             $_SESSION['success'] = "Product added successfully!";
         } else {
+            // Enhanced error message
             $_SESSION['error'] = "Error adding product: " . $conn->error;
+            error_log("MySQL Error: " . $conn->error); // Log the error
         }
         header("Location: StockManagement.php");
         exit;
     }
-    elseif (isset($_POST['update_product'])) {
+    if ($_POST['action'] === 'update_product') {
         // Update product
         $product_id = (int)$_POST['product_id'];
         $name = $conn->real_escape_string($_POST['product_name']);
@@ -618,59 +625,60 @@ if ($result && $result->num_rows > 0) {
     <div id="successMessage" class="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50 hidden"></div>
 
     <!-- Product Modal -->
-    <div id="productModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle" class="modal-title"></h3>
-                <button onclick="closeModal()" class="modal-close">&times;</button>
-            </div>
-            <form id="productForm" method="POST" class="modal-body">
-                <input type="hidden" name="product_id" id="formProductId">
-                <input type="hidden" name="<?= isset($product) ? 'update_product' : 'add_product' ?>" value="1">
-                
-                <div class="form-group">
-                    <label for="productName" class="form-label">Product Name</label>
-                    <input type="text" id="productName" name="product_name" class="form-input" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="category" class="form-label">Category</label>
-                    <select id="category" name="category_id" class="form-input" required>
-                        <option value="">Select a category</option>
-                        <?php foreach ($categories as $category): ?>
-                            <option value="<?= $category['category_id'] ?>"><?= htmlspecialchars($category['category_name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label for="stock" class="form-label">Initial Stock</label>
-                        <input type="number" id="stock" name="quantity" class="form-input" min="0" value="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="minRequired" class="form-label">Min Required</label>
-                        <input type="number" id="minRequired" name="min_required" class="form-input" min="0" value="0" required>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="price" class="form-label">Price</label>
-                    <div class="relative rounded-md shadow-sm">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500 sm:text-sm">$</span>
-                        </div>
-                        <input type="number" id="price" name="price" step="0.01" min="0" class="form-input pl-7" placeholder="0.00" required>
-                    </div>
-                </div>
-                
-                <div class="modal-footer">
-                    <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </div>
-            </form>
+  <!-- Product Modal -->
+<div id="productModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle" class="modal-title"></h3>
+            <button onclick="closeModal()" class="modal-close">&times;</button>
         </div>
+        <form id="productForm" method="POST" class="modal-body">
+            <input type="hidden" name="product_id" id="formProductId">
+            <input type="hidden" name="action" id="formAction" value="add_product">
+            
+            <div class="form-group">
+                <label for="productName" class="form-label">Product Name</label>
+                <input type="text" id="productName" name="product_name" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="category" class="form-label">Category</label>
+                <select id="category" name="category_id" class="form-input" required>
+                    <option value="">Select a category</option>
+                    <?php foreach ($categories as $category): ?>
+                        <option value="<?= $category['category_id'] ?>"><?= htmlspecialchars($category['category_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label for="stock" class="form-label">Initial Stock</label>
+                    <input type="number" id="stock" name="quantity" class="form-input" min="0" value="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="minRequired" class="form-label">Min Required</label>
+                    <input type="number" id="minRequired" name="min_required" class="form-input" min="0" value="0" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="price" class="form-label">Price</label>
+                <div class="relative rounded-md shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="text-gray-500 sm:text-sm">$</span>
+                    </div>
+                    <input type="number" id="price" name="price" step="0.01" min="0" class="form-input pl-7" placeholder="0.00" required>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- Quantity Adjustment Modal -->
     <div id="adjustmentModal" class="modal-overlay">
@@ -756,7 +764,7 @@ function openModal(mode, product = null) {
         modalTitle.textContent = 'Add New Product';
         form.reset();
         document.getElementById('formProductId').value = '';
-        form.querySelector('button[type="submit"]').textContent = 'Add';
+        document.getElementById('formAction').value = 'add_product'; // Set action for adding
     } else if (mode === 'edit' && product) {
         modalTitle.textContent = 'Edit Product';
         document.getElementById('formProductId').value = product.product_id;
@@ -765,7 +773,7 @@ function openModal(mode, product = null) {
         document.getElementById('stock').value = product.quantity;
         document.getElementById('minRequired').value = product.minimum_stock;
         document.getElementById('price').value = product.price;
-        form.querySelector('button[type="submit"]').textContent = 'Save';
+        document.getElementById('formAction').value = 'update_product'; // Set action for updating
     }
     
     modal.classList.add('active');
@@ -800,9 +808,11 @@ function updateNewStockValue() {
     
     const adjustmentType = document.querySelector('input[name="adjustment_type"]:checked').value;
     const quantity = parseInt(document.getElementById('adjustmentQuantity').value) || 0;
+    const currentQty = Number(currentAdjustingProduct.quantity) || 0;
+    const adjQty = Number(quantity) || 0;
     const newStock = adjustmentType === 'add' 
-        ? currentAdjustingProduct.quantity + quantity 
-        : currentAdjustingProduct.quantity - quantity;
+        ? currentQty + adjQty 
+        : currentQty - adjQty;
     
     document.getElementById('newStockValue').textContent = Math.max(0, newStock);
 }

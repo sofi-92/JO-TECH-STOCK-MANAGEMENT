@@ -13,8 +13,8 @@ if (isset($_SESSION['user_id'])) {
         case 'manager':
             header("Location: AdminDashboard.php");
             break;
-        case 'staff':
-            header("Location: StaffDashboard.php");
+        case 'store':
+            header("Location: StoreDashboard.php");
             break;
         case 'sales':
             header("Location: SalesDashboard.php");

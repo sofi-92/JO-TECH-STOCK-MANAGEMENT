@@ -13,7 +13,7 @@ session_start();
 
 
 
-$username = $_SESSION['user']['username'] ?? 'User';
+
 
 $user_id = $_SESSION['user_id'];
 $_SESSION['last_activity'] = time();
@@ -75,9 +75,9 @@ if ($result && $result->num_rows > 0) {
     }
 }
 
-// Calculate max height for chart (for scaling)
-$maxItems = max(array_column($stockByCategory, 'total_items')) ?: 1;
-?><!DOCTYPE html>
+$maxItems = !empty($stockByCategory) ? max(array_column($stockByCategory, 'total_items')) : 1;
+?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">

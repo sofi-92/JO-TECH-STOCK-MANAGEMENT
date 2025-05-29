@@ -48,35 +48,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['message'] = "Error updating category: " . $e->getMessage();
             $_SESSION['message_type'] = "error";
         }
-    } elseif (isset($_POST['delete_category'])) {
-        // Delete category
-        $id = $_POST['category_id'];
-        
-        try {
-            // First check if category has products
-            $stmt = $conn->prepare("SELECT COUNT(*) FROM products WHERE category_id = ?");
+    } if (isset($_POST['delete_category'])) {
+    $id = $_POST['category_id'];
+
+    try {
+        // First check if category has products
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM products WHERE category_id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->bind_result($productCount);
+        $stmt->fetch();
+        $stmt->close(); // Close the first statement
+
+        if ($productCount > 0) {
+            $_SESSION['message'] = "Cannot delete category with products. Please reassign or delete products first.";
+            $_SESSION['message_type'] = "error";
+        } else {
+            $stmt = $conn->prepare("DELETE FROM categories WHERE category_id = ?");
             $stmt->bind_param("i", $id);
             $stmt->execute();
-            $stmt->bind_result($productCount);
-            $stmt->fetch();
-            
-            if ($productCount > 0) {
-                $_SESSION['message'] = "Cannot delete category with products. Please reassign or delete products first.";
-                $_SESSION['message_type'] = "error";
-            } else {
-                $stmt = $conn->prepare("DELETE FROM categories WHERE category_id = ?");
-                $stmt->bind_param("i", $id);
-                $stmt->execute();
-                $_SESSION['message'] = "Category deleted successfully!";
-                $_SESSION['message_type'] = "success";
-            }
-            header("Location: ProductCategories.php");
-            exit;
-        } catch (mysqli_sql_exception $e) {
-            $_SESSION['message'] = "Error deleting category: " . $e->getMessage();
-            $_SESSION['message_type'] = "error";
+            $_SESSION['message'] = "Category deleted successfully!";
+            $_SESSION['message_type'] = "success";
         }
+        header("Location: ProductCategories.php");
+        exit;
+    } catch (mysqli_sql_exception $e) {
+        $_SESSION['message'] = "Error deleting category: " . $e->getMessage();
+        $_SESSION['message_type'] = "error";
     }
+}
 }
 
 // Fetch all categories with product counts
@@ -92,6 +92,7 @@ try {
     $stmt->execute();
     $result = $stmt->get_result();
     $categories = $result->fetch_all(MYSQLI_ASSOC);
+    $result->free(); // Free the result set
 } catch (mysqli_sql_exception $e) {
     $categories = [];
     $_SESSION['message'] = "Error fetching categories: " . $e->getMessage();

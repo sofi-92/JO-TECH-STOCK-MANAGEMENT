@@ -22,27 +22,29 @@ unset($_SESSION['success'], $_SESSION['error']);
 // Handle CRUD operations
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        if (isset($_POST['addUser'])) {
-            // Add new user
-            $name = trim($_POST['name']);
-            $email = trim($_POST['email']);
-            $role = $_POST['role'];
-            $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+       if (isset($_POST['addUser'])) {
+    // Add new user
+    $name = trim($_POST['name']);
+    $email = trim($_POST['email']);
+    $phone = trim($_POST['phone']);
+    $role = $_POST['role'];
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-            $stmt = $conn->prepare("INSERT INTO users (user_name, email, password, role) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $name, $email, $password, $role);
-            $stmt->execute();
-            
-            $_SESSION['success'] = "User added successfully!";
-        } elseif (isset($_POST['updateUser'])) {
+    $stmt = $conn->prepare("INSERT INTO users (user_name, email, phone, password, role) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", $name, $email, $phone, $password, $role); // Correctly binding 5 parameters
+    $stmt->execute();
+    
+    $_SESSION['success'] = "User added successfully!";
+} elseif (isset($_POST['updateUser'])) {
             // Update existing user
             $id = $_POST['id'];
             $name = trim($_POST['name']);
             $email = trim($_POST['email']);
+              $phone = trim($_POST['phone']);
             $role = $_POST['role'];
 
-            $stmt = $conn->prepare("UPDATE users SET user_name = ?, email = ?, role = ? WHERE user_id = ?");
-            $stmt->bind_param("sssi", $name, $email, $role, $id);
+      $stmt = $conn->prepare("UPDATE users SET user_name = ?, email = ?, phone = ?, role = ? WHERE user_id = ?");
+$stmt->bind_param("ssssi", $name, $email, $phone, $role, $id);
             $stmt->execute();
             
             $_SESSION['success'] = "User updated successfully!";
@@ -91,7 +93,7 @@ $editingUser = null;
 if (isset($_GET['edit'])) {
     try {
         $id = (int)$_GET['edit'];
-        $stmt = $conn->prepare("SELECT user_id, user_name, email, role FROM users WHERE user_id = ?");
+        $stmt = $conn->prepare("SELECT user_id, user_name, email, phone, role FROM users WHERE user_id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -102,7 +104,7 @@ if (isset($_GET['edit'])) {
 }
 
 // Role options
-$roles = ['admin', 'manager', 'staff', 'sales', 'procurement'];
+$roles = ['admin', 'manager', 'store', 'sales', 'procurement'];
 ?>
 
 <!DOCTYPE html>
@@ -535,68 +537,127 @@ $roles = ['admin', 'manager', 'staff', 'sales', 'procurement'];
         </div>
 
         <!-- Modal -->
-        <?php if (isset($_GET['edit']) || isset($_GET['modal'])): ?>
-            <div class="modal-overlay">
-                <div class="modal-content">
-                    <div class="p-6">
-                        <h3 class="text-xl font-semibold mb-4">
-                            <?= isset($_GET['edit']) ? 'Edit User' : 'Add New User' ?>
-                        </h3>
-                        
-                        <form method="POST">
-                            <?php if (isset($_GET['edit'])): ?>
-                                <input type="hidden" name="id" value="<?= $editingUser['user_id'] ?>">
-                            <?php endif; ?>
-                            
-                            <div class="space-y-4">
-                                <div class="form-group">
-                                    <label class="form-label">Full Name</label>
-                                    <input type="text" name="name" value="<?= $editingUser['user_name'] ?? '' ?>" 
-                                           class="form-control" required>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label">Email</label>
-                                    <input type="email" name="email" value="<?= $editingUser['email'] ?? '' ?>" 
-                                           class="form-control" required>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label">Role</label>
-                                    <select name="role" class="form-control" required>
-                                        <?php foreach ($roles as $role): ?>
-                                            <option value="<?= $role ?>" <?= ($editingUser['role'] ?? '') === $role ? 'selected' : '' ?>>
-                                                <?= ucfirst($role) ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                
-                                <?php if (!isset($_GET['edit'])): ?>
-                                    <div class="form-group">
-                                        <label class="form-label">Password</label>
-                                        <input type="password" name="password" 
-                                               class="form-control" required>
-                                    </div>
-                                <?php endif; ?>
-                                
-                                <div class="flex justify-end gap-3 pt-4">
-                                    <button type="button" onclick="window.location.href='usermanagement.php'" 
-                                            class="btn btn-outline">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" name="<?= isset($_GET['edit']) ? 'updateUser' : 'addUser' ?>" 
-                                            class="btn btn-primary">
-                                        <?= isset($_GET['edit']) ? 'Save Changes' : 'Add User' ?>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
+     <!-- Modal -->
+<?php if (isset($_GET['edit']) || isset($_GET['modal'])): ?>
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold mb-4">
+                    <?= isset($_GET['edit']) ? 'Edit User' : 'Add New User' ?>
+                </h3>
+
+                <form method="POST" onsubmit="return validatePasswords()">
+                    <?php if (isset($_GET['edit'])): ?>
+                        <input type="hidden" name="id" value="<?= $editingUser['user_id'] ?>">
+                    <?php endif; ?>
+
+                    <div class="space-y-4">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="name" value="<?= $editingUser['user_name'] ?? '' ?>" 
+                                   class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" value="<?= $editingUser['email'] ?? '' ?>" 
+                                   class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="text" name="phone" value="<?= $editingUser['phone'] ?? '' ?>" 
+                                   class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Role</label>
+                            <select name="role" class="form-control" required>
+                                <?php foreach ($roles as $role): ?>
+                                    <option value="<?= $role ?>" <?= ($editingUser['role'] ?? '') === $role ? 'selected' : '' ?>>
+                                        <?= ucfirst($role) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <?php if (!isset($_GET['edit'])): ?>
+        <div class="form-group">
+    <label class="form-label">Password</label>
+    <div class="relative">
+        <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
+        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('password', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </span>
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="form-label">Confirm Password</label>
+    <div class="relative">
+        <input type="password" name="confirm_password" id="confirmPassword" class="form-control" placeholder="Confirm password" required>
+        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700" onclick="togglePasswordVisibility('confirmPassword', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        </span>
+    </div>
+</div>
+                        <?php endif; ?>
+
+                        <div class="flex justify-end gap-3 pt-4">
+                            <button type="button" onclick="window.location.href='usermanagement.php'" 
+                                    class="btn btn-outline">
+                                Cancel
+                            </button>
+                            <button type="submit" name="<?= isset($_GET['edit']) ? 'updateUser' : 'addUser' ?>" 
+                                    class="btn btn-primary">
+                                <?= isset($_GET['edit']) ? 'Save Changes' : 'Add User' ?>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </form>
             </div>
-        <?php endif; ?>
+        </div>
+    </div>
+<?php endif; ?>
         </main>
     </div>
 </body>
 </html>
+
+
+<script>
+function validatePasswords() {
+    const password = document.querySelector('input[name="password"]').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (password !== confirmPassword) {
+        alert("Passwords do not match. Please try again.");
+        return false; // Prevent form submission
+    }
+    return true; // Allow form submission
+}
+function togglePasswordVisibility(fieldId, iconElement) {
+    const passwordField = document.getElementById(fieldId);
+    const icon = iconElement.querySelector('svg');
+    
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+        icon.innerHTML = `
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+        `;
+    } else {
+        passwordField.type = "password";
+        icon.innerHTML = `
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+        `;
+    }
+}
+</script>
