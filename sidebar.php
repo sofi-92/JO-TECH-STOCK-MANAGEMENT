@@ -57,7 +57,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <div class="logo-container">
-            <img src="images/Qoricha logo.png" alt="JO TECH Logo" class="logo">
+            <img src="images/Jo_Tech Logo.jpg" alt="JO TECH Logo" class="logo">
         </div>
         <h2 class="company-name">JO TECH</h2>
         <button class="toggle-btn" id="toggleSidebar">
