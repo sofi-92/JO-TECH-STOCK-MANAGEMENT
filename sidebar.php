@@ -17,21 +17,22 @@ function getNavItems($role) {
                 ['name' => 'Categories', 'path' => '/JO-TECH-STOCK-MANAGEMENT/ProductCategories.php', 'icon' => 'tag'],
                 ['name' => 'Reports', 'path' => '/JO-TECH-STOCK-MANAGEMENT/Reports.php', 'icon' => 'file-text']
             ];
-        case 'staff':
+        case 'store':
             return [
-                ['name' => 'Dashboard', 'path' => 'staff.php', 'icon' => 'home'],
-                ['name' => 'Stock Management', 'path' => 'staff_stock.php', 'icon' => 'box']
+                ['name' => 'Dashboard', 'path' => 'StoreDashboard.php', 'icon' => 'home'],
+                ['name' => 'Stock Management', 'path' => '/JO-TECH-STOCK-MANAGEMENT/StockManagement.php', 'icon' => 'box'],
+                 ['name' => 'Categories', 'path' => '/JO-TECH-STOCK-MANAGEMENT/ProductCategories.php', 'icon' => 'tag']
             ];
         case 'sales':
             return [
                 ['name' => 'Dashboard', 'path' => 'sales.php', 'icon' => 'home'],
-                ['name' => 'View Stock', 'path' => 'sales_stock.php', 'icon' => 'box']
+            
             ];
         case 'procurement':
             return [
                 ['name' => 'Dashboard', 'path' => 'procurement.php', 'icon' => 'home'],
-                ['name' => 'Stock Alerts', 'path' => 'procurement_alerts.php', 'icon' => 'alert-triangle'],
-                ['name' => 'View Stock', 'path' => 'procurement_stock.php', 'icon' => 'box']
+                ['name' => 'Stock Alerts', 'path' => 'stock_alerts.php', 'icon' => 'alert-triangle'],
+                ['name' => 'View Stock', 'path' => 'view_stock.php', 'icon' => 'box']
             ];
         default:
             return [];

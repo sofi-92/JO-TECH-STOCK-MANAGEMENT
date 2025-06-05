@@ -5,8 +5,9 @@ require_once 'config.php';
 $error = '';
 
 // Redirect logged-in users away from login page
+$user_role = isset($_SESSION['user_role']) ? $_SESSION['user_role'] : null;
 if (isset($_SESSION['user_id'])) {
-    switch ($_SESSION['user_role']) {
+    switch ($user_role) {
         case 'admin':
             header("Location: AdminDashboard.php");
             break;

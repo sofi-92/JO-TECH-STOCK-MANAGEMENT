@@ -52,29 +52,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_POST['category_id'];
 
     try {
-        // First check if category has products
-        $stmt = $conn->prepare("SELECT COUNT(*) FROM products WHERE category_id = ?");
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-        $stmt->bind_result($productCount);
-        $stmt->fetch();
-        $stmt->close(); // Close the first statement
+        // Start transaction
+        $conn->begin_transaction();
 
-        if ($productCount > 0) {
-            $_SESSION['message'] = "Cannot delete category with products. Please reassign or delete products first.";
-            $_SESSION['message_type'] = "error";
-        } else {
-            $stmt = $conn->prepare("DELETE FROM categories WHERE category_id = ?");
-            $stmt->bind_param("i", $id);
-            $stmt->execute();
-            $_SESSION['message'] = "Category deleted successfully!";
+        // First delete all products in this category
+        $deleteProductsStmt = $conn->prepare("DELETE FROM products WHERE category_id = ?");
+        $deleteProductsStmt->bind_param("i", $id);
+        $deleteProductsStmt->execute();
+        $deleteProductsStmt->close();
+
+        // Then delete the category
+        $deleteCategoryStmt = $conn->prepare("DELETE FROM categories WHERE category_id = ?");
+        $deleteCategoryStmt->bind_param("i", $id);
+        $deleteCategoryStmt->execute();
+        $affectedRows = $deleteCategoryStmt->affected_rows;
+        $deleteCategoryStmt->close();
+
+        if ($affectedRows > 0) {
+            $_SESSION['message'] = "Category and all associated products deleted successfully!";
             $_SESSION['message_type'] = "success";
+        } else {
+            $_SESSION['message'] = "Category not found or already deleted.";
+            $_SESSION['message_type'] = "error";
         }
+
+        // Commit transaction if all queries succeeded
+        $conn->commit();
+    } catch (mysqli_sql_exception $e) {
+        // Rollback transaction if any error occurs
+        $conn->rollback();
+        $_SESSION['message'] = "Error deleting category and products: " . $e->getMessage();
+        $_SESSION['message_type'] = "error";
+    } finally {
         header("Location: ProductCategories.php");
         exit;
-    } catch (mysqli_sql_exception $e) {
-        $_SESSION['message'] = "Error deleting category: " . $e->getMessage();
-        $_SESSION['message_type'] = "error";
     }
 }
 }

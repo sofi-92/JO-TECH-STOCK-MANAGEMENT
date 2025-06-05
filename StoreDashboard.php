@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once 'config.php';
-$title = "Staff Dashboard";
+$title = "Store Dashboard";
 
 // Get today's stock movements count
 $todayMovements = 0;
@@ -526,7 +526,7 @@ try {
         
         <main class="content-area">
             <div class="mb-8">
-                <h1 class="text-2xl font-bold">Warehouse Staff Dashboard</h1>
+                <h1 class="text-2xl font-bold">Warehouse Store Dashboard</h1>
                 <p class="text-gray-500">Manage stock movements and inventory updates</p>
             </div>
 
@@ -615,61 +615,61 @@ try {
             </div>
 
             <!-- Quick Stock Update Section -->
-            <div class="card mb-8">
-                <div class="card-header">
-                    <h2 class="card-title">Quick Stock Update</h2>
-                  <!--   <div class="p-2 rounded-lg bg-blue-50 text-blue-500">
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                    </div> -->
-                </div>
+  <div class="card mb-8">
+    <div class="card-header">
+        <h2 class="card-title">Quick Stock Update</h2>
+    </div>
 
-                <div class="search-container">
-                    <div class="search-icon">
-                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                    </div>
-                    <input type="text" id="productSearch" class="search-input" placeholder="Search products...">
-                </div>
+    <div class="search-container">
+        <div class="search-icon">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+        </div>
+        <input type="text" id="productSearch" class="search-input" placeholder="Search products...">
+    </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="productList">
-                    <?php foreach ($products as $product): ?>
-                    <div class="product-card">
-                        <h3 class="product-name"><?= htmlspecialchars($product['product_name']) ?></h3>
-                        <p class="product-category"><?= htmlspecialchars($product['category_name']) ?></p>
-                        
-                        <div class="product-stock">
-                            <span class="stock-label">Current Stock:</span>
-                            <span class="stock-value"><?= $product['quantity'] ?></span>
-                        </div>
-
-                        <form method="POST" class="input-group">
-                            <input type="hidden" name="product_id" value="<?= $product['product_id'] ?>">
-                            
-                            <button type="button" class="btn-icon decrement-btn">
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                                </svg>
-                            </button>
-                            
-                            <input type="number" name="quantity" class="input-number" value="0" min="0">
-                            
-                            <button type="button" class="btn-icon increment-btn">
-                                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                            </button>
-                            
-                            <button type="submit" name="update_stock" class="btn btn-primary flex-1">
-                                Update
-                            </button>
-                        </form>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="productList">
+        <?php foreach ($products as $product): ?>
+        <div class="product-card">
+            <h3 class="product-name"><?= htmlspecialchars($product['product_name']) ?></h3>
+            <p class="product-category"><?= htmlspecialchars($product['category_name']) ?></p>
+            
+            <div class="product-stock">
+                <span class="stock-label">Current Stock:</span>
+                <span class="stock-value"><?= $product['quantity'] ?></span>
             </div>
+
+            <form method="POST" class="input-group">
+                <input type="hidden" name="product_id" value="<?= $product['product_id'] ?>">
+                
+                <!-- Decrement button - now submits negative values -->
+                <button type="button" class="btn-icon decrement-btn" onclick="adjustQuantity('<?= $product['product_id'] ?>', -1)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                    </svg>
+                </button>
+                
+                <!-- Input field - now allows negative values -->
+                <input type="number" name="quantity" id="quantity_<?= $product['product_id'] ?>" class="input-number" value="0" min="-<?= $product['quantity'] ?>">
+                
+                <!-- Increment button -->
+                <button type="button" class="btn-icon increment-btn" onclick="adjustQuantity('<?= $product['product_id'] ?>', 1)">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                </button>
+                
+                <!-- Submit button with clearer action text -->
+                <button type="submit" name="update_stock" class="btn btn-primary flex-1">
+                    Update Stock
+                </button>
+            </form>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
 
             <!-- Recent Movements Section -->
             <div class="card">
@@ -710,41 +710,59 @@ try {
                 </table>
             </div>
 
-            <script>
-            // Enhanced number input controls
-            document.querySelectorAll('.increment-btn, .decrement-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const input = this.closest('.input-group').querySelector('input[type="number"]');
-                    const step = 1;
-                    const min = parseInt(input.min) || 0;
-                    
-                    if (this.classList.contains('increment-btn')) {
-                        input.value = parseInt(input.value) + step;
-                    } else {
-                        input.value = Math.max(min, parseInt(input.value) - step);
-                    }
-                    
-                    // Trigger animation
-                    input.style.transform = 'scale(1.05)';
-                    setTimeout(() => {
-                        input.style.transform = '';
-                    }, 200);
-                });
-            });
+<script>
+// Enhanced quantity adjustment with negative values support
+function adjustQuantity(productId, change) {
+    const input = document.getElementById(`quantity_${productId}`);
+    let newValue = parseInt(input.value) + change;
+    
+    // Get current stock from the displayed value (you might want to pass this as a data attribute)
+    const currentStock = parseInt(document.querySelector(`#quantity_${productId}`).closest('.product-card').querySelector('.stock-value').textContent);
+    
+    // Ensure we don't decrement below negative of current stock (can't dispatch more than available)
+    if (change < 0 && newValue < -currentStock) {
+        newValue = -currentStock;
+    }
+    
+    input.value = newValue;
+    
+    // Visual feedback
+    input.style.transform = 'scale(1.05)';
+    input.style.color = change > 0 ? 'green' : 'red';
+    setTimeout(() => {
+        input.style.transform = '';
+        input.style.color = '';
+    }, 200);
+}
 
-            // Live search functionality
-            document.getElementById('productSearch').addEventListener('input', function() {
-                const term = this.value.toLowerCase();
-                document.querySelectorAll('.product-card').forEach(card => {
-                    const name = card.querySelector('.product-name').textContent.toLowerCase();
-                    card.style.display = name.includes(term) ? 'block' : 'none';
-                });
-            });
-            </script>
+// Live search functionality
+document.getElementById('productSearch').addEventListener('input', function() {
+    const term = this.value.toLowerCase();
+    document.querySelectorAll('.product-card').forEach(card => {
+        const name = card.querySelector('.product-name').textContent.toLowerCase();
+        const category = card.querySelector('.product-category').textContent.toLowerCase();
+        card.style.display = (name.includes(term) || category.includes(term)) ? 'block' : 'none';
+    });
+});
+
+// Prevent form submission if quantity is 0
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const quantityInput = this.querySelector('input[name="quantity"]');
+        if (parseInt(quantityInput.value) === 0) {
+            e.preventDefault();
+            alert('Please enter a quantity (positive or negative) before updating stock.');
+        }
+    });
+});
+</script>
+
         </main>
     </div>
 </body>
 </html>
+
+
 
 <?php
 function getIconSvg($iconName, $classes = '') {

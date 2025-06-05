@@ -22,7 +22,7 @@ unset($_SESSION['success'], $_SESSION['error']);
 // Handle CRUD operations
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-       if (isset($_POST['addUser'])) {
+    if (isset($_POST['addUser'])) {
     // Add new user
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
@@ -30,11 +30,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $role = $_POST['role'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    $stmt = $conn->prepare("INSERT INTO users (user_name, email, phone, password, role) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssss", $name, $email, $phone, $password, $role); // Correctly binding 5 parameters
-    $stmt->execute();
+    // Check if email already exists
+    $checkStmt = $conn->prepare("SELECT user_id FROM users WHERE email = ?");
+    $checkStmt->bind_param("s", $email);
+    $checkStmt->execute();
+    $checkStmt->store_result();
     
-    $_SESSION['success'] = "User added successfully!";
+    if ($checkStmt->num_rows > 0) {
+        $_SESSION['error'] = "A user with this email already exists!";
+    } else {
+        // Email doesn't exist, proceed with adding user
+        $stmt = $conn->prepare("INSERT INTO users (user_name, email, phone, password, role) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssss", $name, $email, $phone, $password, $role);
+        
+        if ($stmt->execute()) {
+            $_SESSION['success'] = "User added successfully!";
+        } else {
+            $_SESSION['error'] = "Error adding user: " . $conn->error;
+        }
+    }
+    
+    // Close statements
+    $checkStmt->close();
+    if (isset($stmt)) {
+        $stmt->close();
+    }
 } elseif (isset($_POST['updateUser'])) {
             // Update existing user
             $id = $_POST['id'];

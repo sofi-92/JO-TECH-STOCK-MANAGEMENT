@@ -1,7 +1,6 @@
 <?php
 session_start();
 require_once 'config.php';
-/* require_once 'sidebar.php'; */
 $title = "Sales Dashboard";
 
 // Fetch categories from database
@@ -25,7 +24,7 @@ $outOfStockCount = 0;
 
 try {
     // Base query
-    $query = "SELECT p.product_id, p.product_name, c.category_name, p.quantity, p.minimum_stock 
+    $query = "SELECT p.product_id, p.product_name, c.category_name, p.quantity, p.minimum_stock, p.price
               FROM products p
               JOIN categories c ON p.category_id = c.category_id";
 
@@ -254,11 +253,52 @@ $outOfStockPercent = $totalProducts > 0 ? round(($outOfStockCount / $totalProduc
             width: 100%;
             background: white;
             margin-bottom: 0.75rem;
+            cursor: pointer;
         }
 
         .quick-action:hover {
             background-color: #f8fafc;
             border-color: var(--primary-light);
+            transform: translateY(-1px);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
         }
 
         /* Icons */
@@ -472,6 +512,7 @@ $outOfStockPercent = $totalProducts > 0 ? round(($outOfStockCount / $totalProduc
                                 <tr>
                                     <th>Product Name</th>
                                     <th>Category</th>
+                                    <th>Price</th>
                                     <th>Stock Level</th>
                                     <th>Minimum Stock</th>
                                     <th>Status</th>
@@ -487,6 +528,7 @@ $outOfStockPercent = $totalProducts > 0 ? round(($outOfStockCount / $totalProduc
                                 <tr class="product-row">
                                     <td><?= htmlspecialchars($product['product_name']) ?></td>
                                     <td><?= htmlspecialchars($product['category_name']) ?></td>
+                                    <td>$<?= number_format($product['price'], 2) ?></td>
                                     <td><?= $product['quantity'] ?></td>
                                     <td><?= $product['minimum_stock'] ?></td>
                                     <td>
@@ -566,28 +608,87 @@ $outOfStockPercent = $totalProducts > 0 ? round(($outOfStockCount / $totalProduc
                         <h3 class="text-lg font-semibold">Quick Actions</h3>
                     </div>
                     <div class="card-body">
-                        <button class="quick-action">
+                        <button class="quick-action" id="checkAvailabilityBtn">
                             <span>Check product availability</span>
                             <svg class="icon icon-sm text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </button>
-                        <button class="quick-action">
+                        <button class="quick-action" id="filterByCategoryBtn">
                             <span>Filter by category</span>
                             <svg class="icon icon-sm text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                             </svg>
                         </button>
-                        <button class="quick-action">
+                      <!--   <button class="quick-action" id="contactWarehouseBtn">
                             <span>Contact warehouse</span>
                             <svg class="icon icon-sm text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                             </svg>
-                        </button>
+                        </button> -->
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Check Availability Modal -->
+    <div class="modal" id="availabilityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Check Product Availability</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                    <input type="text" id="productSearchModal" class="form-control" placeholder="Enter product name">
+                </div>
+                <div id="availabilityResults" class="space-y-2">
+                    <!-- Results will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter by Category Modal -->
+    <div class="modal" id="categoryFilterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Filter by Category</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="space-y-2">
+                    <?php foreach ($categories as $category): ?>
+                    <button class="category-filter-btn w-full text-left p-2 hover:bg-gray-100 rounded" data-category="<?= htmlspecialchars($category['category_name']) ?>">
+                        <?= htmlspecialchars($category['category_name']) ?>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Warehouse Modal -->
+    <div class="modal" id="contactWarehouseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold">Contact Warehouse</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                    <input type="text" id="contactSubject" class="form-control" placeholder="Enter subject">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                    <textarea id="contactMessage" class="form-control" rows="4" placeholder="Enter your message"></textarea>
+                </div>
+                <button id="sendMessageBtn" class="btn btn-primary w-full">Send Message</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -613,11 +714,138 @@ $outOfStockPercent = $totalProducts > 0 ? round(($outOfStockCount / $totalProduc
 
         searchInput.addEventListener('input', filterProducts);
         categoryFilter.addEventListener('change', filterProducts);
+
+        // Modal functionality
+        const modals = {
+            availability: document.getElementById('availabilityModal'),
+            categoryFilter: document.getElementById('categoryFilterModal'),
+            contactWarehouse: document.getElementById('contactWarehouseModal')
+        };
+
+        const buttons = {
+            checkAvailability: document.getElementById('checkAvailabilityBtn'),
+            filterByCategory: document.getElementById('filterByCategoryBtn'),
+            contactWarehouse: document.getElementById('contactWarehouseBtn'),
+            sendMessage: document.getElementById('sendMessageBtn')
+        };
+
+        const closeButtons = document.querySelectorAll('.close-modal');
+
+        // Open modals
+        buttons.checkAvailability.addEventListener('click', () => {
+            modals.availability.style.display = 'flex';
+        });
+
+        buttons.filterByCategory.addEventListener('click', () => {
+            modals.categoryFilter.style.display = 'flex';
+        });
+
+        buttons.contactWarehouse.addEventListener('click', () => {
+            modals.contactWarehouse.style.display = 'flex';
+        });
+
+        // Close modals
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                Object.values(modals).forEach(modal => {
+                    modal.style.display = 'none';
+                });
+            });
+        });
+
+        // Close when clicking outside modal content
+        Object.values(modals).forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+
+        // Category filter in modal
+        document.querySelectorAll('.category-filter-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const category = this.getAttribute('data-category');
+                categoryFilter.value = category;
+                filterProducts();
+                modals.categoryFilter.style.display = 'none';
+            });
+        });
+
+        // Product availability search in modal
+        const productSearchModal = document.getElementById('productSearchModal');
+        const availabilityResults = document.getElementById('availabilityResults');
+
+        productSearchModal.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            availabilityResults.innerHTML = '';
+
+            if (searchTerm.length < 2) {
+                availabilityResults.innerHTML = '<p class="text-gray-500 text-sm">Enter at least 2 characters to search</p>';
+                return;
+            }
+
+            const matchingProducts = Array.from(productRows).filter(row => {
+                const productName = row.cells[0].textContent.toLowerCase();
+                return productName.includes(searchTerm);
+            });
+
+            if (matchingProducts.length === 0) {
+                availabilityResults.innerHTML = '<p class="text-gray-500">No products found</p>';
+                return;
+            }
+
+            matchingProducts.forEach(row => {
+                const productName = row.cells[0].textContent;
+                const category = row.cells[1].textContent;
+                const price = row.cells[2].textContent;
+                const stock = row.cells[3].textContent;
+                const status = row.cells[5].textContent.trim();
+
+                const productDiv = document.createElement('div');
+                productDiv.className = 'p-3 border border-gray-200 rounded';
+                productDiv.innerHTML = `
+                    <h4 class="font-semibold">${productName}</h4>
+                    <div class="flex justify-between text-sm mt-1">
+                        <span>${category}</span>
+                        <span>${price}</span>
+                    </div>
+                    <div class="flex justify-between text-sm mt-1">
+                        <span>Stock: ${stock}</span>
+                        <span class="${status === 'In Stock' ? 'text-green-600' : status === 'Low Stock' ? 'text-yellow-600' : 'text-red-600'}">
+                            ${status}
+                        </span>
+                    </div>
+                `;
+                availabilityResults.appendChild(productDiv);
+            });
+        });
+
+        // Send message functionality
+        buttons.sendMessage.addEventListener('click', function() {
+            const subject = document.getElementById('contactSubject').value;
+            const message = document.getElementById('contactMessage').value;
+
+            if (!subject || !message) {
+                alert('Please fill in both subject and message fields');
+                return;
+            }
+
+            // In a real application, you would send this to the server
+            alert(`Message sent to warehouse:\n\nSubject: ${subject}\n\nMessage: ${message}`);
+            modals.contactWarehouse.style.display = 'none';
+            
+            // Clear the form
+            document.getElementById('contactSubject').value = '';
+            document.getElementById('contactMessage').value = '';
+        });
+
+        // Initialize availability modal with instructions
+        availabilityResults.innerHTML = '<p class="text-gray-500 text-sm">Search for a product to check availability</p>';
     });
     </script>
 </body>
 </html>
-
 
 <?php
 function getIconSvg($iconName, $classes = '') {

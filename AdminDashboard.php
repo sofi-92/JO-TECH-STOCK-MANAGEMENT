@@ -293,46 +293,52 @@ $maxItems = !empty($stockByCategory) ? max(array_column($stockByCategory, 'total
         }
 
         /* Charts */
-        .chart-container {
-            height: 200px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-around;
-            padding: 1.5rem 0 2.5rem;
-        }
+    .chart-container {
+    height: 250px; /* Increased height for better visibility */
+    padding: 1rem 0;
+    background-color: #f9fafb; /* Light background for contrast */
+    border-radius: 12px; /* Rounded corners */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+}
 
-        .chart-bar {
-            transition: all 0.3s ease;
-            width: 32px;
-            border-radius: 4px 4px 0 0;
-            position: relative;
-            background: linear-gradient(to top, var(--primary), var(--primary-light));
-        }
+.chart-bar {
+    transition: all 0.3s ease;
+    width: 60px; /* Increased width for more spacing */
+    border-radius: 8px; /* Rounded edges for bars */
+    position: relative;
+    margin: 0 5px; /* Spacing between bars */
+}
 
-        .chart-bar:hover {
-            opacity: 0.9;
-        }
+.chart-value {
+    position: absolute;
+    top: -1.5rem; /* Slightly above the bar */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.85rem; /* Slightly larger for better readability */
+    font-weight: bold;
+    color: white; /* White text on colored bars */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Shadow for contrast */
+}
 
-        .chart-label {
-            position: absolute;
-            bottom: -1.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.6875rem;
-            font-weight: 500;
-            white-space: nowrap;
-            color: var(--gray);
-        }
+.chart-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #4b5563; /* Dark gray for contrast */
+    text-align: center;
+    margin-top: 0.5rem; /* Spacing between bar and label */
+}
 
-        .chart-value {
-            position: absolute;
-            top: -1.25rem;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.6875rem;
-            font-weight: 600;
-            color: var(--dark);
-        }
+/* Update responsiveness */
+@media (max-width: 768px) {
+    .chart-container {
+        flex-direction: column; /* Stack vertically on small screens */
+        align-items: center;
+    }
+
+    .chart-bar {
+        width: 50px; /* Adjust width for smaller screens */
+    }
+}
 
         /* Icons */
         .icon {
@@ -627,40 +633,42 @@ $maxItems = !empty($stockByCategory) ? max(array_column($stockByCategory, 'total
                 </div>
             </div>
 
-            <!-- Stock by Category Chart -->
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">Stock by Category</h2>
-                    <?= getIconSvg('bar-chart-2', 'icon text-green-500') ?>
-                </div>
-                <div class="card-body">
-                    <div class="chart-container">
-                        <?php if (count($stockByCategory) > 0): ?>
-                            <?php 
-                            $colors = ['blue', 'green', 'yellow', 'purple', 'indigo', 'pink', 'red'];
-                            $colorIndex = 0;
-                            $maxHeight = 150;
-                            ?>
-                            <?php foreach ($stockByCategory as $category): 
-                                $height = ($category['total_items'] / $maxItems) * $maxHeight;
-                                $color = $colors[$colorIndex % count($colors)];
-                                $colorIndex++;
-                            ?>
-                            <div class="flex flex-col items-center">
-                                <div class="chart-bar" style="height: <?= $height ?>px">
-                                    <span class="chart-value"><?= number_format($category['total_items']) ?></span>
-                                </div>
-                                <span class="chart-label"><?= htmlspecialchars($category['category_name']) ?></span>
-                            </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div class="w-full text-center text-gray-500">
-                                No category data available
-                            </div>
-                        <?php endif; ?>
+     <!-- Stock by Category Chart -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h2 class="card-title">Stock by Category</h2>
+        <?= getIconSvg('bar-chart-2', 'icon text-green-500') ?>
+    </div>
+    <div class="card-body">
+        <div class="chart-container">
+            <?php if (count($stockByCategory) > 0): ?>
+                <?php 
+                $colors = ['#3b82f6', '#10b981', '#f59e0b', '#9333ea', '#ec4899', '#ef4444', '#6b7280'];
+                $colorIndex = 0;
+                $maxHeight = 200; // Increased height for better visibility
+                ?>
+                <div class="flex items-end justify-around w-full">
+                    <?php foreach ($stockByCategory as $category): 
+                        $height = ($category['total_items'] / $maxItems) * $maxHeight;
+                        $color = $colors[$colorIndex % count($colors)];
+                        $colorIndex++;
+                    ?>
+                    <div class="flex flex-col items-center">
+                        <div class="chart-bar" style="height: <?= $height ?>px; background-color: <?= $color ?>;">
+                            <span class="chart-value"><?= number_format($category['total_items']) ?></span>
+                        </div>
+                        <span class="chart-label" style="margin-top: 0.5rem;"><?= htmlspecialchars($category['category_name']) ?></span>
                     </div>
+                    <?php endforeach; ?>
                 </div>
-            </div>
+            <?php else: ?>
+                <div class="w-full text-center text-gray-500">
+                    No category data available
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
         </main>
     </div>
 </body>
