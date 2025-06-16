@@ -21,7 +21,7 @@ function getNavItems($role) {
             return [
                 ['name' => 'Dashboard', 'path' => 'StoreDashboard.php', 'icon' => 'home'],
                 ['name' => 'Stock Management', 'path' => '/JO-TECH-STOCK-MANAGEMENT/StockManagement.php', 'icon' => 'box'],
-                 ['name' => 'Categories', 'path' => '/JO-TECH-STOCK-MANAGEMENT/ProductCategories.php', 'icon' => 'tag']
+                ['name' => 'Categories', 'path' => '/JO-TECH-STOCK-MANAGEMENT/ProductCategories.php', 'icon' => 'tag']
             ];
         case 'sales':
             return [
@@ -30,7 +30,7 @@ function getNavItems($role) {
             ];
         case 'procurement':
             return [
-                ['name' => 'Dashboard', 'path' => 'procurement.php', 'icon' => 'home'],
+                ['name' => 'Dashboard', 'path' => 'ProcurementDashboard.php', 'icon' => 'home'],
                 ['name' => 'Stock Alerts', 'path' => 'stock_alerts.php', 'icon' => 'alert-triangle'],
                 ['name' => 'View Stock', 'path' => 'view_stock.php', 'icon' => 'box']
             ];
