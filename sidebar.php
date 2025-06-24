@@ -62,7 +62,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
         </div>
         <h2 class="company-name">JO TECH</h2>
         <button class="toggle-btn" id="toggleSidebar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" class="logo" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 12h18M3 6h18M3 18h18"></path>
             </svg>
         </button>
@@ -169,21 +169,22 @@ function getIconSvg2($iconName) {
 }
 
 .logo-container {
-    width: 60px;
-    height: 60px;
+    width: 85px;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: white;
     border-radius: 50%;
-    padding: 0.5rem;
+    
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
 }
+.logo{
+    border-radius:50%;
+}
 
 .sidebar.collapsed .logo-container {
-    width: 48px;
-    height: 48px;
+    width: 60px;
 }
 
 .logo {

@@ -258,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h1><i class="fas fa-sign-in-alt"></i> Welcome Back</h1>
         
         <?php if ($error): ?>
-            <div class="error-message"><?= htmlspecialchars($error) ?></div>
+            <div class="error-message"><?php htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
         <form method="POST" action="login.php">

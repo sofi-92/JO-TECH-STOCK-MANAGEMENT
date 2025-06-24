@@ -144,7 +144,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                     </div>
                     <div class="col-md-6">
                         <select id="statusFilter" class="form-select">
-                            <option value="all">All Statuses</option>
+                            <option value="all">All Status</option>
                             <option value="good">Good Stock</option>
                             <option value="low">Low Stock</option>
                             <option value="out">Out of Stock</option>
